@@ -1,0 +1,404 @@
+/* SE Team Manager - BeyondTrust Theme */
+
+/* BeyondTrust Color Palette (BAR page style):
+   BT Orange:       #f15822  rgb(241, 88, 34)
+   BT Dark Navy:    #1a2332  rgb(26, 35, 50)  (navbar, dark backgrounds, secondary)
+   BT Light Gray:   #f4f4f6  (page background)
+   BT Orange Hover: #d94d1e
+   BT Orange Light: #fdeee8  (tinted backgrounds)
+*/
+
+/* Override Bootstrap theme colors */
+:root {
+    --bs-primary: #f15822;
+    --bs-primary-rgb: 241, 88, 34;
+    --bs-secondary: #1a2332;
+    --bs-secondary-rgb: 26, 35, 50;
+    --bs-success: #2e7d32;
+    --bs-success-rgb: 46, 125, 50;
+    --bs-info: #f1822e;
+    --bs-info-rgb: 241, 130, 46;
+    --bs-dark: #1a2332;
+    --bs-dark-rgb: 26, 35, 50;
+    --bs-link-color: #f15822;
+    --bs-link-hover-color: #d94d1e;
+}
+
+/* Primary button overrides */
+.btn-primary {
+    --bs-btn-bg: #f15822;
+    --bs-btn-border-color: #f15822;
+    --bs-btn-hover-bg: #d94d1e;
+    --bs-btn-hover-border-color: #c44419;
+    --bs-btn-active-bg: #c44419;
+    --bs-btn-active-border-color: #b33d16;
+    --bs-btn-disabled-bg: #f15822;
+    --bs-btn-disabled-border-color: #f15822;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #f15822;
+    --bs-btn-border-color: #f15822;
+    --bs-btn-hover-bg: #f15822;
+    --bs-btn-hover-border-color: #f15822;
+    --bs-btn-active-bg: #d94d1e;
+    --bs-btn-active-border-color: #d94d1e;
+}
+
+/* Secondary button overrides (dark navy) */
+.btn-secondary {
+    --bs-btn-bg: #1a2332;
+    --bs-btn-border-color: #1a2332;
+    --bs-btn-hover-bg: #151d29;
+    --bs-btn-hover-border-color: #111820;
+    --bs-btn-active-bg: #111820;
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: #1a2332;
+    --bs-btn-border-color: #1a2332;
+    --bs-btn-hover-bg: #1a2332;
+    --bs-btn-hover-border-color: #1a2332;
+}
+
+/* Info overrides (warm orange tint instead of default cyan) */
+.btn-info {
+    --bs-btn-bg: #f1822e;
+    --bs-btn-border-color: #f1822e;
+    --bs-btn-hover-bg: #d97228;
+    --bs-btn-hover-border-color: #c46622;
+    --bs-btn-color: #fff;
+}
+
+.btn-outline-info {
+    --bs-btn-color: #f1822e;
+    --bs-btn-border-color: #f1822e;
+    --bs-btn-hover-bg: #f1822e;
+    --bs-btn-hover-border-color: #f1822e;
+}
+
+/* Success overrides (deeper green) */
+.btn-success {
+    --bs-btn-bg: #2e7d32;
+    --bs-btn-border-color: #2e7d32;
+    --bs-btn-hover-bg: #256b29;
+    --bs-btn-hover-border-color: #1e5e22;
+}
+
+.btn-outline-success {
+    --bs-btn-color: #2e7d32;
+    --bs-btn-border-color: #2e7d32;
+    --bs-btn-hover-bg: #2e7d32;
+    --bs-btn-hover-border-color: #2e7d32;
+}
+
+/* Background color overrides */
+.bg-primary {
+    background-color: #f15822 !important;
+}
+
+.bg-secondary {
+    background-color: #1a2332 !important;
+}
+
+.bg-success {
+    background-color: #2e7d32 !important;
+}
+
+.bg-info {
+    background-color: #f1822e !important;
+}
+
+.bg-dark {
+    background-color: #1a2332 !important;
+}
+
+/* Navbar - BT dark navy with orange accent top border */
+.navbar-dark.bg-primary {
+    background-color: #1a2332 !important;
+    border-top: 3px solid #f15822;
+}
+
+body {
+    background-color: #f4f4f6;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+.table th {
+    border-top: none;
+    background-color: #f4f4f6;
+}
+
+.modal-header {
+    background-color: #f4f4f6;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.timeline .card {
+    border-left: 3px solid #f15822;
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-danger:hover,
+.btn-outline-info:hover,
+.btn-outline-secondary:hover {
+    color: #fff;
+}
+
+.nav-link {
+    padding: 0.5rem 1rem;
+}
+
+.nav-link.active {
+    font-weight: 600;
+}
+
+.card-footer {
+    background-color: #fff;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.note-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Dashboard cards */
+.card.bg-primary .card-footer,
+.card.bg-success .card-footer,
+.card.bg-warning .card-footer,
+.card.bg-info .card-footer {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-top: none;
+}
+
+/* Report builder */
+.form-check-input:checked {
+    background-color: #f15822;
+    border-color: #f15822;
+}
+
+/* Focus ring color */
+.form-check-input:focus {
+    border-color: #f1822e;
+    box-shadow: 0 0 0 0.25rem rgba(241, 88, 34, 0.25);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #f1822e;
+    box-shadow: 0 0 0 0.25rem rgba(241, 88, 34, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .btn-group-sm > .btn,
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+
+    .table {
+        font-size: 0.875rem;
+    }
+}
+
+/* 1-1 accordion styles */
+.se-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: #f15822;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.accordion-item.rounded {
+    border-radius: 0.5rem !important;
+    overflow: hidden;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #fdeee8;
+    color: #1a1a1a;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0, 0, 0, 0.125);
+}
+
+.meeting-timeline .card {
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+}
+
+/* Skill Matrix */
+.skill-matrix-wrapper {
+    overflow-x: auto;
+}
+
+.skill-matrix-table .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background-color: #fff;
+    min-width: 200px;
+}
+
+.skill-matrix-table thead .sticky-col {
+    z-index: 2;
+    background-color: #f4f4f6;
+}
+
+.skill-matrix-table .skill-col-header {
+    min-width: 120px;
+    font-size: 0.85rem;
+}
+
+.se-avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+}
+
+.skill-select {
+    font-size: 0.78rem;
+    padding: 0.2rem 1.5rem 0.2rem 0.4rem;
+    border-radius: 0.3rem;
+    font-weight: 500;
+    cursor: pointer;
+    min-width: 110px;
+}
+
+/* Proficiency colors */
+.proficiency-havent-started,
+select.proficiency-havent-started {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #ced4da;
+}
+
+.proficiency-training,
+select.proficiency-training {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+}
+
+.proficiency-demo-ready,
+select.proficiency-demo-ready {
+    background-color: #fff3cd;
+    color: #856404;
+    border-color: #ffeeba;
+}
+
+.proficiency-pov-ready,
+select.proficiency-pov-ready {
+    background-color: #ffe0b2;
+    color: #e65100;
+    border-color: #ffcc80;
+}
+
+.proficiency-expert,
+select.proficiency-expert {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.proficiency-badge {
+    font-size: 0.78rem;
+    padding: 0.35em 0.7em;
+    font-weight: 500;
+}
+
+.skill-matrix-table tbody tr:hover .sticky-col {
+    background-color: #fdeee8;
+}
+
+/* Scrollbar styling for report builder */
+.card-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.card-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Links */
+a {
+    color: #f15822;
+}
+
+a:hover {
+    color: #d94d1e;
+}
+
+/* Keep nav links white in dark navbar */
+.navbar-dark .nav-link,
+.navbar-dark .navbar-brand {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.navbar-dark .nav-link:hover,
+.navbar-dark .nav-link.active,
+.navbar-dark .navbar-brand:hover {
+    color: #fff !important;
+}
+
+/* Badge overrides for pipeline stages */
+.badge.bg-primary {
+    background-color: #f15822 !important;
+}
+
+/* Pagination and misc active states */
+.page-link.active,
+.active > .page-link {
+    background-color: #f15822;
+    border-color: #f15822;
+}

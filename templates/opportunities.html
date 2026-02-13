@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Opportunities - SE Team Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2><i class="bi bi-graph-up-arrow"></i> Opportunities</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOppModal">
+            <i class="bi bi-plus-lg"></i> Add Opportunity
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Stage</label>
+                <select name="stage" class="form-select">
+                    <option value="">All Stages</option>
+                    {% for s in opportunity_stages %}
+                    <option value="{{ s }}" {% if selected_stage == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Team Member</label>
+                <select name="member_id" class="form-select">
+                    <option value="">All Members</option>
+                    {% for member in team_members %}
+                    <option value="{{ member.id }}" {% if selected_member == member.id %}selected{% endif %}>{{ member.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary me-2">Filter</button>
+                <a href="{{ url_for('opportunities') }}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Account</th>
+                        <th>Stage</th>
+                        <th>Value</th>
+                        <th>SE</th>
+                        <th>Close Date</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for opp in opportunities %}
+                    <tr>
+                        <td>
+                            <strong>{{ opp.name }}</strong>
+                            {% if opp.updates|length > 1 %}
+                            <span class="badge bg-info">{{ opp.updates|length - 1 }} updates</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ opp.account }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if opp.stage == 'Closed Won' else 'danger' if opp.stage == 'Closed Lost' else 'primary' }}">
+                                {{ opp.stage }}
+                            </span>
+                        </td>
+                        <td>${{ '{:,.0f}'.format(opp.value) }}</td>
+                        <td>{{ opp.team_member.name }}</td>
+                        <td>{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</td>
+                        <td>{{ opp.updated_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewOppModal{{ opp.id }}">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editOppModal{{ opp.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#commentOppModal{{ opp.id }}">
+                                <i class="bi bi-chat"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOppModal{{ opp.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No opportunities found. Add one to get started!</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Opportunity Modal -->
+<div class="modal fade" id="addOppModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('add_opportunity') }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Opportunity</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Opportunity Name *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Account *</label>
+                        <input type="text" name="account" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Stage</label>
+                            <select name="stage" class="form-select">
+                                {% for s in opportunity_stages %}
+                                <option value="{{ s }}">{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Value ($)</label>
+                            <input type="number" name="value" class="form-control" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SE Team Member *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                <option value="">Select SE...</option>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}">{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Expected Close Date</label>
+                            <input type="date" name="close_date" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Opportunity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for each opportunity -->
+{% for opp in opportunities %}
+<!-- View Modal with Timeline -->
+<div class="modal fade" id="viewOppModal{{ opp.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ opp.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>Account:</strong> {{ opp.account }}</p>
+                        <p><strong>Stage:</strong> <span class="badge bg-primary">{{ opp.stage }}</span></p>
+                        <p><strong>Value:</strong> ${{ '{:,.0f}'.format(opp.value) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>SE:</strong> {{ opp.team_member.name }}</p>
+                        <p><strong>Close Date:</strong> {{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</p>
+                        <p><strong>Created:</strong> {{ opp.created_at.strftime('%Y-%m-%d') }}</p>
+                    </div>
+                </div>
+                <h6>History</h6>
+                <div class="timeline">
+                    {% for update in opp.updates|sort(attribute='created_at', reverse=True) %}
+                    <div class="card mb-2">
+                        <div class="card-body py-2">
+                            <small class="text-muted">{{ update.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            {% if update.stage_from and update.stage_to %}
+                            <p class="mb-0">Stage changed: <span class="badge bg-secondary">{{ update.stage_from }}</span> &rarr; <span class="badge bg-primary">{{ update.stage_to }}</span></p>
+                            {% endif %}
+                            {% if update.comment %}
+                            <p class="mb-0">{{ update.comment }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editOppModal{{ opp.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_opportunity', id=opp.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Opportunity</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Opportunity Name *</label>
+                        <input type="text" name="name" class="form-control" value="{{ opp.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Account *</label>
+                        <input type="text" name="account" class="form-control" value="{{ opp.account }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Stage</label>
+                            <select name="stage" class="form-select">
+                                {% for s in opportunity_stages %}
+                                <option value="{{ s }}" {% if opp.stage == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Value ($)</label>
+                            <input type="number" name="value" class="form-control" step="0.01" value="{{ opp.value }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SE Team Member *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}" {% if opp.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Expected Close Date</label>
+                            <input type="date" name="close_date" class="form-control" value="{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comment (for stage change)</label>
+                        <textarea name="comment" class="form-control" rows="2" placeholder="Optional comment about this update..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Comment Modal -->
+<div class="modal fade" id="commentOppModal{{ opp.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('add_opportunity_comment', id=opp.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Comment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>{{ opp.name }}</strong> - {{ opp.account }}</p>
+                    <div class="mb-3">
+                        <label class="form-label">Comment *</label>
+                        <textarea name="comment" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteOppModal{{ opp.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('delete_opportunity', id=opp.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Opportunity</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>{{ opp.name }}</strong>?</p>
+                    <p class="text-danger"><small>This will also delete all related updates and comments.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

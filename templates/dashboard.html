@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SE Team Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Team Members</h6>
+                        <h2 class="mb-0">{{ team_count }}</h2>
+                    </div>
+                    <i class="bi bi-people-fill fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('team_members') }}" class="text-white text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Open Opportunities</h6>
+                        <h2 class="mb-0">{{ open_opps }}</h2>
+                    </div>
+                    <i class="bi bi-graph-up-arrow fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('opportunities') }}" class="text-white text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Open Cases</h6>
+                        <h2 class="mb-0">{{ open_cases }}</h2>
+                    </div>
+                    <i class="bi bi-life-preserver fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('support_cases') }}" class="text-white text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Pending Follow-ups</h6>
+                        <h2 class="mb-0">{{ pending_followups }}</h2>
+                    </div>
+                    <i class="bi bi-check2-square fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('follow_ups') }}" class="text-white text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if overdue_followups %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle"></i> Overdue Follow-ups
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Due Date</th>
+                                <th>Priority</th>
+                                <th>Team Member</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in overdue_followups %}
+                            <tr>
+                                <td>{{ item.title }}</td>
+                                <td><span class="text-danger">{{ item.due_date.strftime('%Y-%m-%d') }}</span></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if item.priority == 'High' else 'warning' if item.priority == 'Medium' else 'secondary' }}">
+                                        {{ item.priority }}
+                                    </span>
+                                </td>
+                                <td>{{ item.team_member.name if item.team_member else '-' }}</td>
+                                <td>
+                                    <form action="{{ url_for('complete_follow_up', id=item.id) }}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check"></i> Complete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-chat-dots"></i> Recent 1-1s
+            </div>
+            <div class="card-body">
+                {% if recent_one_on_ones %}
+                <ul class="list-group list-group-flush">
+                    {% for meeting in recent_one_on_ones %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ meeting.team_member.name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ meeting.date.strftime('%Y-%m-%d') }}</small>
+                            {% if meeting.mood %}
+                            <span class="badge bg-{{ 'success' if meeting.mood in ['Excellent', 'Good'] else 'warning' if meeting.mood == 'Neutral' else 'danger' }} ms-2">
+                                {{ meeting.mood }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No recent 1-1 meetings</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('one_on_ones') }}" class="btn btn-sm btn-outline-primary">View All 1-1s</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-check2-square"></i> Upcoming Follow-ups
+            </div>
+            <div class="card-body">
+                {% if upcoming_followups %}
+                <ul class="list-group list-group-flush">
+                    {% for item in upcoming_followups %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ item.title }}</strong>
+                            <br>
+                            <small class="{% if item.due_date < today %}text-danger{% else %}text-muted{% endif %}">
+                                Due: {{ item.due_date.strftime('%Y-%m-%d') }}
+                            </small>
+                            <span class="badge bg-{{ 'danger' if item.priority == 'High' else 'warning' if item.priority == 'Medium' else 'secondary' }} ms-2">
+                                {{ item.priority }}
+                            </span>
+                        </div>
+                        <form action="{{ url_for('complete_follow_up', id=item.id) }}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No pending follow-ups</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('follow_ups') }}" class="btn btn-sm btn-outline-primary">View All Follow-ups</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

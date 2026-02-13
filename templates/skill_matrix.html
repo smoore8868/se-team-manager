@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Skill Matrix - SE Team Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-grid-3x3-gap"></i> Skill Matrix</h2>
+</div>
+
+<!-- Color Legend -->
+<div class="card mb-4">
+    <div class="card-body py-2 d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-500 text-muted me-1">Proficiency:</span>
+        {% for level in proficiency_levels %}
+        {% set css_class = level | replace(" ", "-") | replace("'", "") | lower %}
+        <span class="badge proficiency-badge proficiency-{{ css_class }}">{{ level }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get">
+            <div class="d-flex gap-2 align-items-end flex-nowrap">
+                <div class="flex-fill" style="min-width:0">
+                    <label class="form-label small mb-1">Region</label>
+                    <select name="region" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        {% for r in regions %}
+                        <option value="{{ r }}" {% if selected_region == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% for s in skills %}
+                <div class="flex-fill" style="min-width:0">
+                    <label class="form-label small mb-1">{{ s }}</label>
+                    <select name="skill_{{ s }}" class="form-select form-select-sm">
+                        <option value="">Any</option>
+                        {% for level in proficiency_levels %}
+                        <option value="{{ level }}" {% if skill_filters.get(s) == level %}selected{% endif %}>{{ level }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+                <div class="d-flex gap-1 flex-shrink-0">
+                    <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
+                    <a href="{{ url_for('skill_matrix') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Skill Matrix Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive skill-matrix-wrapper">
+            <table class="table table-bordered table-hover mb-0 skill-matrix-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sticky-col">SE</th>
+                        {% for skill in skills %}
+                        <th class="text-center skill-col-header">{{ skill }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td class="sticky-col">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="se-avatar se-avatar-sm">{{ member.name[:2] | upper }}</div>
+                                <div>
+                                    <div class="fw-semibold">{{ member.name }}</div>
+                                    <small class="text-muted">{{ member.region }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        {% for skill in skills %}
+                        {% set current = ratings.get((member.id, skill), "Haven't Started") %}
+                        {% set css_class = current | replace(" ", "-") | replace("'", "") | lower %}
+                        <td class="text-center align-middle p-1">
+                            <form method="POST" action="{{ url_for('update_skill_rating') }}">
+                                <input type="hidden" name="team_member_id" value="{{ member.id }}">
+                                <input type="hidden" name="skill" value="{{ skill }}">
+                                <input type="hidden" name="filter_region" value="{{ selected_region or '' }}">
+                                {% for fs, fv in skill_filters.items() %}
+                                <input type="hidden" name="filter_skill_{{ fs }}" value="{{ fv }}">
+                                {% endfor %}
+                                <select name="proficiency"
+                                        class="form-select form-select-sm skill-select proficiency-{{ css_class }}"
+                                        onchange="this.form.submit()">
+                                    {% for level in proficiency_levels %}
+                                    <option value="{{ level }}" {% if level == current %}selected{% endif %}>{{ level }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                    {% if not members %}
+                    <tr>
+                        <td colspan="{{ skills | length + 1 }}" class="text-center text-muted py-4">
+                            No team members found. <a href="{{ url_for('team_members') }}">Add team members</a> first.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

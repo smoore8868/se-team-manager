@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Follow-ups - SE Team Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2><i class="bi bi-check2-square"></i> Follow-ups</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFollowUpModal">
+            <i class="bi bi-plus-lg"></i> Create Follow-up
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for s in followup_statuses %}
+                    <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    {% for p in priorities %}
+                    <option value="{{ p }}" {% if selected_priority == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Team Member</label>
+                <select name="member_id" class="form-select">
+                    <option value="">All Members</option>
+                    {% for member in team_members %}
+                    <option value="{{ member.id }}" {% if selected_member == member.id %}selected{% endif %}>{{ member.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary me-2">Filter</button>
+                <a href="{{ url_for('follow_ups') }}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Team Member</th>
+                        <th>Related To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in follow_ups %}
+                    <tr class="{% if item.due_date < today and item.status in ['Pending', 'In Progress'] %}table-danger{% endif %}">
+                        <td><strong>{{ item.title }}</strong></td>
+                        <td>
+                            <span class="{% if item.due_date < today and item.status in ['Pending', 'In Progress'] %}text-danger fw-bold{% endif %}">
+                                {{ item.due_date.strftime('%Y-%m-%d') }}
+                            </span>
+                            {% if item.due_date < today and item.status in ['Pending', 'In Progress'] %}
+                            <span class="badge bg-danger">Overdue</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if item.status == 'Completed' else 'secondary' if item.status == 'Deferred' else 'info' if item.status == 'In Progress' else 'warning' }}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if item.priority == 'High' else 'warning' if item.priority == 'Medium' else 'secondary' }}">
+                                {{ item.priority }}
+                            </span>
+                        </td>
+                        <td>{{ item.team_member.name if item.team_member else '-' }}</td>
+                        <td>
+                            {% if item.related_type %}
+                            <span class="badge bg-light text-dark">{{ item.related_type }} #{{ item.related_id }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.status not in ['Completed'] %}
+                            <form action="{{ url_for('complete_follow_up', id=item.id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Complete">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editFollowUpModal{{ item.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteFollowUpModal{{ item.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No follow-ups found. Create one to get started!</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Follow-up Modal -->
+<div class="modal fade" id="addFollowUpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('add_follow_up') }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Follow-up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Due Date *</label>
+                            <input type="date" name="due_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                {% for s in followup_statuses %}
+                                <option value="{{ s }}">{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select name="priority" class="form-select">
+                                {% for p in priorities %}
+                                <option value="{{ p }}" {% if p == 'Medium' %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Team Member</label>
+                            <select name="team_member_id" class="form-select">
+                                <option value="">None</option>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}">{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Related Type</label>
+                            <select name="related_type" class="form-select">
+                                <option value="">None</option>
+                                <option value="one_on_one">1-1 Meeting</option>
+                                <option value="opportunity">Opportunity</option>
+                                <option value="support_case">Support Case</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Related ID</label>
+                            <input type="number" name="related_id" class="form-control" placeholder="ID of related item">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Follow-up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit and Delete Modals -->
+{% for item in follow_ups %}
+<!-- Edit Modal -->
+<div class="modal fade" id="editFollowUpModal{{ item.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_follow_up', id=item.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Follow-up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" class="form-control" value="{{ item.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ item.description or '' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Due Date *</label>
+                            <input type="date" name="due_date" class="form-control" value="{{ item.due_date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                {% for s in followup_statuses %}
+                                <option value="{{ s }}" {% if item.status == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select name="priority" class="form-select">
+                                {% for p in priorities %}
+                                <option value="{{ p }}" {% if item.priority == p %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Team Member</label>
+                            <select name="team_member_id" class="form-select">
+                                <option value="">None</option>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}" {% if item.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Related Type</label>
+                            <select name="related_type" class="form-select">
+                                <option value="">None</option>
+                                <option value="one_on_one" {% if item.related_type == 'one_on_one' %}selected{% endif %}>1-1 Meeting</option>
+                                <option value="opportunity" {% if item.related_type == 'opportunity' %}selected{% endif %}>Opportunity</option>
+                                <option value="support_case" {% if item.related_type == 'support_case' %}selected{% endif %}>Support Case</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Related ID</label>
+                            <input type="number" name="related_id" class="form-control" value="{{ item.related_id or '' }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteFollowUpModal{{ item.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('delete_follow_up', id=item.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Follow-up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>{{ item.title }}</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

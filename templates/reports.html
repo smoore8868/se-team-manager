@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - SE Team Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-file-earmark-bar-graph"></i> Report Builder</h2>
+        <p class="text-muted">Select items to include in your report and choose the export format.</p>
+    </div>
+</div>
+
+<form action="{{ url_for('generate_report') }}" method="post">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Start Date (Optional)</label>
+            <input type="date" name="start_date" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">End Date (Optional)</label>
+            <input type="date" name="end_date" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Export Format</label>
+            <select name="format" class="form-select">
+                <option value="pdf">PDF Report</option>
+                <option value="csv">CSV Export</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Team Members -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-person-badge"></i> Team Members</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="team_members" id="selectAllTeam">
+                        <label class="form-check-label" for="selectAllTeam">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for member in team_members %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input team_members-checkbox" name="team_members" value="{{ member.id }}" id="team_member_{{ member.id }}">
+                        <label class="form-check-label" for="team_member_{{ member.id }}">
+                            {{ member.name }} <small class="text-muted">({{ member.region }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No team members</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 1-1 Meetings -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-chat-dots"></i> 1-1 Meetings</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="one_on_ones" id="selectAllOneOnOnes">
+                        <label class="form-check-label" for="selectAllOneOnOnes">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for meeting in one_on_ones %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input one_on_ones-checkbox" name="one_on_ones" value="{{ meeting.id }}" id="one_on_one_{{ meeting.id }}">
+                        <label class="form-check-label" for="one_on_one_{{ meeting.id }}">
+                            {{ meeting.team_member.name }} <small class="text-muted">({{ meeting.date.strftime('%Y-%m-%d') }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No 1-1 meetings</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Opportunities -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-graph-up-arrow"></i> Opportunities</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="opportunities" id="selectAllOpps">
+                        <label class="form-check-label" for="selectAllOpps">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for opp in opportunities %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input opportunities-checkbox" name="opportunities" value="{{ opp.id }}" id="opportunity_{{ opp.id }}">
+                        <label class="form-check-label" for="opportunity_{{ opp.id }}">
+                            {{ opp.name }} <small class="text-muted">({{ opp.stage }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No opportunities</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Support Cases -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-life-preserver"></i> Support Cases</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="support_cases" id="selectAllCases">
+                        <label class="form-check-label" for="selectAllCases">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for case in cases %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input support_cases-checkbox" name="support_cases" value="{{ case.id }}" id="case_{{ case.id }}">
+                        <label class="form-check-label" for="case_{{ case.id }}">
+                            {{ case.title }} <small class="text-muted">({{ case.status }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No support cases</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Follow-ups -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-check2-square"></i> Follow-ups</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="follow_ups" id="selectAllFollowUps">
+                        <label class="form-check-label" for="selectAllFollowUps">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for item in follow_ups %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input follow_ups-checkbox" name="follow_ups" value="{{ item.id }}" id="follow_up_{{ item.id }}">
+                        <label class="form-check-label" for="follow_up_{{ item.id }}">
+                            {{ item.title }} <small class="text-muted">({{ item.due_date.strftime('%Y-%m-%d') }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No follow-ups</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-journal-text"></i> Notes</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="notes" id="selectAllNotes">
+                        <label class="form-check-label" for="selectAllNotes">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for note in notes %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input notes-checkbox" name="notes" value="{{ note.id }}" id="note_{{ note.id }}">
+                        <label class="form-check-label" for="note_{{ note.id }}">
+                            {{ note.title }} <small class="text-muted">({{ note.created_at.strftime('%Y-%m-%d') }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No notes</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Skill Matrix -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-grid-3x3-gap"></i> Skill Matrix</span>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input select-all" data-target="skill_matrix" id="selectAllSkillMatrix">
+                        <label class="form-check-label" for="selectAllSkillMatrix">All</label>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    {% for member in team_members %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input skill_matrix-checkbox" name="skill_matrix" value="{{ member.id }}" id="skill_matrix_{{ member.id }}">
+                        <label class="form-check-label" for="skill_matrix_{{ member.id }}">
+                            {{ member.name }} <small class="text-muted">({{ member.region }})</small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No team members</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-download"></i> Generate Report
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.select-all').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+        var target = this.dataset.target;
+        var checkboxes = document.querySelectorAll('.' + target + '-checkbox');
+        checkboxes.forEach(function(cb) {
+            cb.checked = checkbox.checked;
+        });
+    });
+});
+</script>
+{% endblock %}
