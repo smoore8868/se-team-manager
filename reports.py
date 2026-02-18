@@ -108,6 +108,34 @@ def generate_pdf_report(data, start_date=None, end_date=None):
         story.append(table)
         story.append(Spacer(1, 24))
 
+    # Live POVs Section
+    if data.get('live_povs'):
+        story.append(Paragraph("Live POVs", styles['SectionTitle']))
+        table_data = [['Name', 'Account', 'Stage', 'Value', 'SE', 'Close Date']]
+        for pov in data['live_povs']:
+            table_data.append([
+                pov.name[:30],
+                pov.account[:20],
+                pov.stage,
+                f"${pov.value:,.0f}",
+                pov.team_member.name,
+                pov.close_date.strftime('%Y-%m-%d') if pov.close_date else '-'
+            ])
+        table = Table(table_data, colWidths=[1.5*inch, 1.2*inch, 1*inch, 0.8*inch, 1.2*inch, 1*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ed6c02')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.lightgrey),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 24))
+
     # Support Cases Section
     if data['support_cases']:
         story.append(Paragraph("Support Cases", styles['SectionTitle']))
@@ -267,6 +295,23 @@ def generate_csv_report(data, start_date=None, end_date=None):
                     opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '',
                     opp.created_at.strftime('%Y-%m-%d'),
                     opp.updated_at.strftime('%Y-%m-%d')
+                ])
+            writer.writerow([])
+
+        # Live POVs
+        if data.get('live_povs'):
+            writer.writerow(['LIVE POVS'])
+            writer.writerow(['Name', 'Account', 'Stage', 'Value', 'SE', 'Close Date', 'Created', 'Updated'])
+            for pov in data['live_povs']:
+                writer.writerow([
+                    pov.name,
+                    pov.account,
+                    pov.stage,
+                    pov.value,
+                    pov.team_member.name,
+                    pov.close_date.strftime('%Y-%m-%d') if pov.close_date else '',
+                    pov.created_at.strftime('%Y-%m-%d'),
+                    pov.updated_at.strftime('%Y-%m-%d')
                 ])
             writer.writerow([])
 

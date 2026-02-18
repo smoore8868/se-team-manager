@@ -646,6 +646,7 @@ def reports():
     all_notes = Note.query.order_by(Note.created_at.desc()).all()
 
     skill_ratings = SkillRating.query.all()
+    live_povs = Opportunity.query.filter(Opportunity.pov_status == 'Active').order_by(Opportunity.updated_at.desc()).all()
 
     selected_member_id = request.args.get('member_id', type=int)
 
@@ -657,6 +658,7 @@ def reports():
                            follow_ups=follow_up_items,
                            notes=all_notes,
                            skill_ratings=skill_ratings,
+                           live_povs=live_povs,
                            selected_member_id=selected_member_id)
 
 
@@ -675,7 +677,8 @@ def generate_report():
         'support_cases': request.form.getlist('support_cases'),
         'follow_ups': request.form.getlist('follow_ups'),
         'notes': request.form.getlist('notes'),
-        'skill_matrix': request.form.getlist('skill_matrix')
+        'skill_matrix': request.form.getlist('skill_matrix'),
+        'live_povs': request.form.getlist('live_povs')
     }
 
     data = {
@@ -685,6 +688,7 @@ def generate_report():
         'support_cases': SupportCase.query.filter(SupportCase.id.in_(selected['support_cases'])).all() if selected['support_cases'] else [],
         'follow_ups': FollowUp.query.filter(FollowUp.id.in_(selected['follow_ups'])).all() if selected['follow_ups'] else [],
         'notes': Note.query.filter(Note.id.in_(selected['notes'])).all() if selected['notes'] else [],
+        'live_povs': Opportunity.query.filter(Opportunity.id.in_(selected['live_povs']), Opportunity.pov_status == 'Active').all() if selected['live_povs'] else [],
         'skill_matrix': []
     }
 
