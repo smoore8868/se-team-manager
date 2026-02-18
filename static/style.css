@@ -109,6 +109,14 @@
     background-color: #f1822e !important;
 }
 
+.bg-warning {
+    color: #1a2332 !important;
+}
+
+.badge.bg-warning {
+    color: #1a2332 !important;
+}
+
 .bg-dark {
     background-color: #1a2332 !important;
 }
