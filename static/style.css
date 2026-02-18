@@ -190,11 +190,22 @@ body {
 
 /* Dashboard cards */
 .card.bg-primary .card-footer,
+.card.bg-secondary .card-footer,
 .card.bg-success .card-footer,
 .card.bg-warning .card-footer,
 .card.bg-info .card-footer {
     background-color: rgba(0, 0, 0, 0.1);
     border-top: none;
+}
+
+/* Form section titles (opportunity/POV/1-1 modals) */
+.form-section-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1a2332;
+    border-bottom: 2px solid #f15822;
+    padding-bottom: 0.4rem;
+    margin-bottom: 1rem;
 }
 
 /* Report builder */
