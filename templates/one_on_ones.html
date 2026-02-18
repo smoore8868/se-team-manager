@@ -20,7 +20,10 @@
         </form>
     </div>
     {% if selected_member %}
-    <div class="col-md-3 d-flex align-items-center justify-content-end">
+    <div class="col-md-3 d-flex align-items-center justify-content-end gap-2">
+        <a href="{{ url_for('reports', member_id=selected_member.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-bar-graph"></i> Report
+        </a>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMeetingModal">
             <i class="bi bi-plus-lg"></i> Log 1-1
         </button>

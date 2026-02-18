@@ -647,6 +647,8 @@ def reports():
 
     skill_ratings = SkillRating.query.all()
 
+    selected_member_id = request.args.get('member_id', type=int)
+
     return render_template('reports.html',
                            team_members=team_members,
                            one_on_ones=one_on_ones,
@@ -654,7 +656,8 @@ def reports():
                            cases=cases,
                            follow_ups=follow_up_items,
                            notes=all_notes,
-                           skill_ratings=skill_ratings)
+                           skill_ratings=skill_ratings,
+                           selected_member_id=selected_member_id)
 
 
 @app.route('/reports/generate', methods=['POST'])

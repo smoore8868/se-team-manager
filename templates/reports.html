@@ -43,7 +43,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for member in team_members %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input team_members-checkbox" name="team_members" value="{{ member.id }}" id="team_member_{{ member.id }}">
+                        <input type="checkbox" class="form-check-input team_members-checkbox" name="team_members" value="{{ member.id }}" id="team_member_{{ member.id }}" data-member-id="{{ member.id }}">
                         <label class="form-check-label" for="team_member_{{ member.id }}">
                             {{ member.name }} <small class="text-muted">({{ member.region }})</small>
                         </label>
@@ -68,7 +68,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for meeting in one_on_ones %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input one_on_ones-checkbox" name="one_on_ones" value="{{ meeting.id }}" id="one_on_one_{{ meeting.id }}">
+                        <input type="checkbox" class="form-check-input one_on_ones-checkbox" name="one_on_ones" value="{{ meeting.id }}" id="one_on_one_{{ meeting.id }}" data-member-id="{{ meeting.team_member_id }}">
                         <label class="form-check-label" for="one_on_one_{{ meeting.id }}">
                             {{ meeting.team_member.name }} <small class="text-muted">({{ meeting.date.strftime('%Y-%m-%d') }})</small>
                         </label>
@@ -93,7 +93,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for opp in opportunities %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input opportunities-checkbox" name="opportunities" value="{{ opp.id }}" id="opportunity_{{ opp.id }}">
+                        <input type="checkbox" class="form-check-input opportunities-checkbox" name="opportunities" value="{{ opp.id }}" id="opportunity_{{ opp.id }}" data-member-id="{{ opp.team_member_id }}">
                         <label class="form-check-label" for="opportunity_{{ opp.id }}">
                             {{ opp.name }} <small class="text-muted">({{ opp.stage }})</small>
                         </label>
@@ -118,7 +118,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for case in cases %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input support_cases-checkbox" name="support_cases" value="{{ case.id }}" id="case_{{ case.id }}">
+                        <input type="checkbox" class="form-check-input support_cases-checkbox" name="support_cases" value="{{ case.id }}" id="case_{{ case.id }}" data-member-id="{{ case.team_member_id }}">
                         <label class="form-check-label" for="case_{{ case.id }}">
                             {{ case.title }} <small class="text-muted">({{ case.status }})</small>
                         </label>
@@ -143,7 +143,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for item in follow_ups %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input follow_ups-checkbox" name="follow_ups" value="{{ item.id }}" id="follow_up_{{ item.id }}">
+                        <input type="checkbox" class="form-check-input follow_ups-checkbox" name="follow_ups" value="{{ item.id }}" id="follow_up_{{ item.id }}" data-member-id="{{ item.team_member_id }}">
                         <label class="form-check-label" for="follow_up_{{ item.id }}">
                             {{ item.title }} <small class="text-muted">({{ item.due_date.strftime('%Y-%m-%d') }})</small>
                         </label>
@@ -168,7 +168,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for note in notes %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input notes-checkbox" name="notes" value="{{ note.id }}" id="note_{{ note.id }}">
+                        <input type="checkbox" class="form-check-input notes-checkbox" name="notes" value="{{ note.id }}" id="note_{{ note.id }}" data-member-id="{{ note.team_member_id }}">
                         <label class="form-check-label" for="note_{{ note.id }}">
                             {{ note.title }} <small class="text-muted">({{ note.created_at.strftime('%Y-%m-%d') }})</small>
                         </label>
@@ -193,7 +193,7 @@
                 <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                     {% for member in team_members %}
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input skill_matrix-checkbox" name="skill_matrix" value="{{ member.id }}" id="skill_matrix_{{ member.id }}">
+                        <input type="checkbox" class="form-check-input skill_matrix-checkbox" name="skill_matrix" value="{{ member.id }}" id="skill_matrix_{{ member.id }}" data-member-id="{{ member.id }}">
                         <label class="form-check-label" for="skill_matrix_{{ member.id }}">
                             {{ member.name }} <small class="text-muted">({{ member.region }})</small>
                         </label>
@@ -227,5 +227,13 @@ document.querySelectorAll('.select-all').forEach(function(checkbox) {
         });
     });
 });
+
+{% if selected_member_id %}
+// Auto-select all checkboxes matching the selected member
+var memberId = '{{ selected_member_id }}';
+document.querySelectorAll('[data-member-id="' + memberId + '"]').forEach(function(cb) {
+    cb.checked = true;
+});
+{% endif %}
 </script>
 {% endblock %}
