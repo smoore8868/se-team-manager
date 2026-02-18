@@ -48,13 +48,15 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Opportunity</th>
                         <th>Account</th>
                         <th>Stage</th>
+                        <th>Conf</th>
                         <th>Value</th>
-                        <th>SE</th>
+                        <th>Primary SE</th>
+                        <th>Sales Rep</th>
+                        <th>POV</th>
                         <th>Close Date</th>
-                        <th>Updated</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -62,21 +64,21 @@
                     {% for opp in opportunities %}
                     <tr>
                         <td>
-                            <strong>{{ opp.name }}</strong>
+                            <strong>
+                                {% if opp.salesforce_link %}<a href="{{ opp.salesforce_link }}" target="_blank">{{ opp.name }}</a>{% else %}{{ opp.name }}{% endif %}
+                            </strong>
                             {% if opp.updates|length > 1 %}
                             <span class="badge bg-info">{{ opp.updates|length - 1 }} updates</span>
                             {% endif %}
                         </td>
                         <td>{{ opp.account }}</td>
-                        <td>
-                            <span class="badge bg-{{ 'success' if opp.stage == 'Closed Won' else 'danger' if opp.stage == 'Closed Lost' else 'primary' }}">
-                                {{ opp.stage }}
-                            </span>
-                        </td>
+                        <td><span class="badge bg-{{ 'success' if opp.stage == '6' else 'primary' }}">{{ opp.stage }}</span></td>
+                        <td>{{ opp.confidence or '-' }}</td>
                         <td>${{ '{:,.0f}'.format(opp.value) }}</td>
                         <td>{{ opp.team_member.name }}</td>
+                        <td>{{ opp.sales_rep or '-' }}</td>
+                        <td><span class="badge bg-{{ 'success' if opp.pov_status == 'Tech Win' else 'primary' if opp.pov_status == 'Active' else 'info' if opp.pov_status == 'Completed' else 'secondary' }}">{{ opp.pov_status or 'None' }}</span></td>
                         <td>{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</td>
-                        <td>{{ opp.updated_at.strftime('%Y-%m-%d') }}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewOppModal{{ opp.id }}">
                                 <i class="bi bi-eye"></i>
@@ -94,7 +96,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No opportunities found. Add one to get started!</td>
+                        <td colspan="10" class="text-center text-muted">No opportunities found. Add one to get started!</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -105,7 +107,7 @@
 
 <!-- Add Opportunity Modal -->
 <div class="modal fade" id="addOppModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('add_opportunity') }}" method="post">
                 <div class="modal-header">
@@ -113,41 +115,99 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Opportunity Name *</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Account *</label>
-                        <input type="text" name="account" class="form-control" required>
-                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Stage</label>
-                            <select name="stage" class="form-select">
-                                {% for s in opportunity_stages %}
-                                <option value="{{ s }}">{{ s }}</option>
-                                {% endfor %}
-                            </select>
+                            <label class="form-label">Account *</label>
+                            <input type="text" name="account" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Value ($)</label>
+                            <label class="form-label">Opportunity *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Salesforce Link</label>
+                        <input type="url" name="salesforce_link" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Products</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for p in products_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="products" value="{{ p }}" id="add_prod_{{ p }}">
+                                <label class="form-check-label" for="add_prod_{{ p }}">{{ p }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sales Rep</label>
+                            <input type="text" name="sales_rep" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Primary SE *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                <option value="">Select SE...</option>
+                                {% for member in team_members %}<option value="{{ member.id }}">{{ member.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opp Value ($)</label>
                             <input type="number" name="value" class="form-control" step="0.01" value="0">
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">SE Team Member *</label>
-                            <select name="team_member_id" class="form-select" required>
-                                <option value="">Select SE...</option>
-                                {% for member in team_members %}
-                                <option value="{{ member.id }}">{{ member.name }}</option>
-                                {% endfor %}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stage (1-6)</label>
+                            <select name="stage" class="form-select">
+                                {% for s in opportunity_stages %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Expected Close Date</label>
                             <input type="date" name="close_date" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Confidence (1-10)</label>
+                            <select name="confidence" class="form-select">
+                                <option value="">-</option>
+                                {% for c in range(1, 11) %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">RFP</label>
+                            <select name="rfp" class="form-select">
+                                <option value="N">No</option>
+                                <option value="Y">Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Demo</label>
+                            <select name="demo" class="form-select">
+                                <option value="N">No</option>
+                                <option value="Y">Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">POV</label>
+                            <select name="pov_status" class="form-select">
+                                {% for ps in pov_statuses %}<option value="{{ ps }}">{{ ps }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="form-section-title">Latest Update</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="latest_update_date" class="form-control">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="latest_update_notes" class="form-control" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
@@ -171,18 +231,30 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="row mb-4">
+                <div class="row mb-3">
                     <div class="col-md-6">
                         <p><strong>Account:</strong> {{ opp.account }}</p>
                         <p><strong>Stage:</strong> <span class="badge bg-primary">{{ opp.stage }}</span></p>
+                        <p><strong>Confidence:</strong> {{ opp.confidence or '-' }}/10</p>
                         <p><strong>Value:</strong> ${{ '{:,.0f}'.format(opp.value) }}</p>
+                        <p><strong>Products:</strong> {{ opp.products or '-' }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>SE:</strong> {{ opp.team_member.name }}</p>
+                        <p><strong>Primary SE:</strong> {{ opp.team_member.name }}</p>
+                        <p><strong>Sales Rep:</strong> {{ opp.sales_rep or '-' }}</p>
                         <p><strong>Close Date:</strong> {{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</p>
-                        <p><strong>Created:</strong> {{ opp.created_at.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>RFP:</strong> {{ opp.rfp or 'N' }} | <strong>Demo:</strong> {{ opp.demo or 'N' }} | <strong>POV:</strong> {{ opp.pov_status or 'None' }}</p>
+                        {% if opp.salesforce_link %}<p><strong>SF Link:</strong> <a href="{{ opp.salesforce_link }}" target="_blank">Open in Salesforce</a></p>{% endif %}
                     </div>
                 </div>
+                {% if opp.latest_update_notes %}
+                <div class="card mb-3 bg-light">
+                    <div class="card-body py-2">
+                        <strong class="small">Latest Update{% if opp.latest_update_date %} ({{ opp.latest_update_date.strftime('%Y-%m-%d') }}){% endif %}:</strong>
+                        <p class="mb-0 small">{{ opp.latest_update_notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
                 <h6>History</h6>
                 <div class="timeline">
                     {% for update in opp.updates|sort(attribute='created_at', reverse=True) %}
@@ -209,7 +281,7 @@
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editOppModal{{ opp.id }}" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('edit_opportunity', id=opp.id) }}" method="post">
                 <div class="modal-header">
@@ -217,45 +289,99 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Opportunity Name *</label>
-                        <input type="text" name="name" class="form-control" value="{{ opp.name }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Account *</label>
-                        <input type="text" name="account" class="form-control" value="{{ opp.account }}" required>
-                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Stage</label>
-                            <select name="stage" class="form-select">
-                                {% for s in opportunity_stages %}
-                                <option value="{{ s }}" {% if opp.stage == s %}selected{% endif %}>{{ s }}</option>
-                                {% endfor %}
-                            </select>
+                            <label class="form-label">Account *</label>
+                            <input type="text" name="account" class="form-control" value="{{ opp.account }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Value ($)</label>
+                            <label class="form-label">Opportunity *</label>
+                            <input type="text" name="name" class="form-control" value="{{ opp.name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Salesforce Link</label>
+                        <input type="url" name="salesforce_link" class="form-control" value="{{ opp.salesforce_link or '' }}" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Products</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for p in products_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="products" value="{{ p }}" id="main_opp{{ opp.id }}_prod_{{ p }}" {% if opp.products and p in opp.products.split(',') %}checked{% endif %}>
+                                <label class="form-check-label" for="main_opp{{ opp.id }}_prod_{{ p }}">{{ p }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sales Rep</label>
+                            <input type="text" name="sales_rep" class="form-control" value="{{ opp.sales_rep or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Primary SE *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                {% for member in team_members %}<option value="{{ member.id }}" {% if opp.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opp Value ($)</label>
                             <input type="number" name="value" class="form-control" step="0.01" value="{{ opp.value }}">
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">SE Team Member *</label>
-                            <select name="team_member_id" class="form-select" required>
-                                {% for member in team_members %}
-                                <option value="{{ member.id }}" {% if opp.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>
-                                {% endfor %}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stage (1-6)</label>
+                            <select name="stage" class="form-select">
+                                {% for s in opportunity_stages %}<option value="{{ s }}" {% if opp.stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Expected Close Date</label>
                             <input type="date" name="close_date" class="form-control" value="{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '' }}">
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Confidence (1-10)</label>
+                            <select name="confidence" class="form-select">
+                                <option value="">-</option>
+                                {% for c in range(1, 11) %}<option value="{{ c }}" {% if opp.confidence == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Comment (for stage change)</label>
-                        <textarea name="comment" class="form-control" rows="2" placeholder="Optional comment about this update..."></textarea>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">RFP</label>
+                            <select name="rfp" class="form-select">
+                                <option value="N" {% if opp.rfp != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if opp.rfp == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Demo</label>
+                            <select name="demo" class="form-select">
+                                <option value="N" {% if opp.demo != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if opp.demo == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">POV</label>
+                            <select name="pov_status" class="form-select">
+                                {% for ps in pov_statuses %}<option value="{{ ps }}" {% if opp.pov_status == ps %}selected{% endif %}>{{ ps }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="form-section-title">Latest Update</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="latest_update_date" class="form-control" value="{{ opp.latest_update_date.strftime('%Y-%m-%d') if opp.latest_update_date else '' }}">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="latest_update_notes" class="form-control" rows="2">{{ opp.latest_update_notes or '' }}</textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

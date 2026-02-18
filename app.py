@@ -12,13 +12,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 REGIONS = ['East', 'Central', 'West', 'Global']
-OPPORTUNITY_STAGES = ['Prospecting', 'Qualification', 'Demo', 'POC', 'Negotiation', 'Closed Won', 'Closed Lost']
+OPPORTUNITY_STAGES = ['1', '2', '3', '4', '5', '6']
 CASE_STATUSES = ['Open', 'In Progress', 'Pending', 'Resolved', 'Closed']
 PRIORITIES = ['High', 'Medium', 'Low']
 FOLLOWUP_STATUSES = ['Pending', 'In Progress', 'Completed', 'Deferred']
 MOODS = ['Excellent', 'Good', 'Neutral', 'Concerned', 'Needs Attention']
 SKILLS = ['Password Safe', 'EPM Win-Mac', 'EPM-L', 'Remote Support', 'PRA', 'AD Bridge', 'Insights', 'Entitle']
 PROFICIENCY_LEVELS = ["Haven't Started", 'Training', 'Demo Ready', 'POV Ready', 'Expert']
+PRODUCTS = ['EPM', 'EPM-L', 'PWS', 'RS', 'PRA', 'ADB', 'Insights', 'Entitle']
+POV_STATUSES = ['None', 'Active', 'Completed', 'Tech Win']
 
 
 @app.context_processor
@@ -31,7 +33,9 @@ def inject_globals():
         'followup_statuses': FOLLOWUP_STATUSES,
         'moods': MOODS,
         'skills': SKILLS,
-        'proficiency_levels': PROFICIENCY_LEVELS
+        'proficiency_levels': PROFICIENCY_LEVELS,
+        'products_list': PRODUCTS,
+        'pov_statuses': POV_STATUSES,
     }
 
 
@@ -39,7 +43,8 @@ def inject_globals():
 @app.route('/')
 def dashboard():
     team_count = TeamMember.query.count()
-    open_opps = Opportunity.query.filter(~Opportunity.stage.in_(['Closed Won', 'Closed Lost'])).count()
+    live_povs = Opportunity.query.filter(Opportunity.pov_status == 'Active').count()
+    open_opps = Opportunity.query.filter(Opportunity.stage != '6').count()
     open_cases = SupportCase.query.filter(~SupportCase.status.in_(['Resolved', 'Closed'])).count()
     pending_followups = FollowUp.query.filter(FollowUp.status.in_(['Pending', 'In Progress'])).count()
     overdue_followups = FollowUp.query.filter(
@@ -53,6 +58,7 @@ def dashboard():
 
     return render_template('dashboard.html',
                            team_count=team_count,
+                           live_povs=live_povs,
                            open_opps=open_opps,
                            open_cases=open_cases,
                            pending_followups=pending_followups,
@@ -111,22 +117,58 @@ def delete_team_member(id):
 # One-on-Ones
 @app.route('/one-on-ones')
 def one_on_ones():
-    expand_member = request.args.get('expand', type=int)
-    team_members = TeamMember.query.order_by(TeamMember.name).all()
+    member_id = request.args.get('member_id', type=int)
+    team_members_list = TeamMember.query.order_by(TeamMember.name).all()
 
-    # Build a dict of member_id -> list of meetings (sorted newest first)
-    meetings_by_member = {}
-    for member in team_members:
-        meetings_by_member[member.id] = (
-            OneOnOne.query
-            .filter(OneOnOne.team_member_id == member.id)
-            .order_by(OneOnOne.date.desc())
-            .all()
-        )
+    selected_member = None
+    meetings = []
+    active_opps = []
+    open_cases = []
+    live_povs = []
+    skill_ratings = {}
+    open_followups = []
+    member_notes = []
 
-    return render_template('one_on_ones.html', team_members=team_members,
-                           meetings_by_member=meetings_by_member,
-                           expand_member=expand_member)
+    if member_id:
+        selected_member = TeamMember.query.get(member_id)
+        if selected_member:
+            meetings = (OneOnOne.query
+                        .filter(OneOnOne.team_member_id == member_id)
+                        .order_by(OneOnOne.date.desc()).all())
+            active_opps = (Opportunity.query
+                           .filter(Opportunity.team_member_id == member_id,
+                                   Opportunity.stage != '6')
+                           .order_by(Opportunity.updated_at.desc()).all())
+            open_cases = (SupportCase.query
+                          .filter(SupportCase.team_member_id == member_id,
+                                  ~SupportCase.status.in_(['Resolved', 'Closed']))
+                          .order_by(SupportCase.created_at.desc()).all())
+            live_povs = (Opportunity.query
+                         .filter(Opportunity.team_member_id == member_id,
+                                 Opportunity.pov_status == 'Active')
+                         .order_by(Opportunity.updated_at.desc()).all())
+            ratings = SkillRating.query.filter_by(team_member_id=member_id).all()
+            skill_ratings = {r.skill: r.proficiency for r in ratings}
+            open_followups = (FollowUp.query
+                              .filter(FollowUp.team_member_id == member_id,
+                                      ~FollowUp.status.in_(['Completed']))
+                              .order_by(FollowUp.due_date).all())
+            member_notes = (Note.query
+                            .filter(Note.team_member_id == member_id)
+                            .order_by(Note.created_at.desc()).all())
+
+    return render_template('one_on_ones.html',
+                           team_members=team_members_list,
+                           selected_member=selected_member,
+                           member_id=member_id,
+                           meetings=meetings,
+                           active_opps=active_opps,
+                           open_cases=open_cases,
+                           live_povs=live_povs,
+                           skill_ratings=skill_ratings,
+                           open_followups=open_followups,
+                           member_notes=member_notes,
+                           today=date.today())
 
 
 @app.route('/one-on-ones/add', methods=['POST'])
@@ -142,7 +184,7 @@ def add_one_on_one():
     db.session.add(meeting)
     db.session.commit()
     flash('1-1 meeting logged successfully', 'success')
-    return redirect(url_for('one_on_ones', expand=member_id))
+    return redirect(url_for('one_on_ones', member_id=member_id))
 
 
 @app.route('/one-on-ones/edit/<int:id>', methods=['POST'])
@@ -155,7 +197,7 @@ def edit_one_on_one(id):
     meeting.mood = request.form.get('mood', '')
     db.session.commit()
     flash('1-1 meeting updated successfully', 'success')
-    return redirect(url_for('one_on_ones', expand=meeting.team_member_id))
+    return redirect(url_for('one_on_ones', member_id=meeting.team_member_id))
 
 
 @app.route('/one-on-ones/delete/<int:id>', methods=['POST'])
@@ -165,7 +207,7 @@ def delete_one_on_one(id):
     db.session.delete(meeting)
     db.session.commit()
     flash('1-1 meeting deleted successfully', 'success')
-    return redirect(url_for('one_on_ones', expand=member_id))
+    return redirect(url_for('one_on_ones', member_id=member_id))
 
 
 # Opportunities
@@ -191,10 +233,19 @@ def add_opportunity():
     opp = Opportunity(
         name=request.form['name'],
         account=request.form['account'],
-        stage=request.form.get('stage', 'Prospecting'),
+        stage=request.form.get('stage', '1'),
         value=float(request.form.get('value', 0) or 0),
         team_member_id=request.form['team_member_id'],
-        close_date=parse_date(request.form['close_date']).date() if request.form.get('close_date') else None
+        close_date=parse_date(request.form['close_date']).date() if request.form.get('close_date') else None,
+        salesforce_link=request.form.get('salesforce_link', ''),
+        confidence=int(request.form['confidence']) if request.form.get('confidence') else None,
+        sales_rep=request.form.get('sales_rep', ''),
+        products=','.join(request.form.getlist('products')),
+        rfp=request.form.get('rfp', 'N'),
+        demo=request.form.get('demo', 'N'),
+        pov_status=request.form.get('pov_status', 'None'),
+        latest_update_date=parse_date(request.form['latest_update_date']).date() if request.form.get('latest_update_date') else None,
+        latest_update_notes=request.form.get('latest_update_notes', ''),
     )
     db.session.add(opp)
     db.session.commit()
@@ -208,6 +259,9 @@ def add_opportunity():
     db.session.commit()
 
     flash('Opportunity added successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('opportunities'))
 
 
@@ -222,6 +276,15 @@ def edit_opportunity(id):
     opp.value = float(request.form.get('value', 0) or 0)
     opp.team_member_id = request.form['team_member_id']
     opp.close_date = parse_date(request.form['close_date']).date() if request.form.get('close_date') else None
+    opp.salesforce_link = request.form.get('salesforce_link', '')
+    opp.confidence = int(request.form['confidence']) if request.form.get('confidence') else None
+    opp.sales_rep = request.form.get('sales_rep', '')
+    opp.products = ','.join(request.form.getlist('products'))
+    opp.rfp = request.form.get('rfp', 'N')
+    opp.demo = request.form.get('demo', 'N')
+    opp.pov_status = request.form.get('pov_status', 'None')
+    opp.latest_update_date = parse_date(request.form['latest_update_date']).date() if request.form.get('latest_update_date') else None
+    opp.latest_update_notes = request.form.get('latest_update_notes', '')
 
     if old_stage != opp.stage:
         update = OpportunityUpdate(
@@ -234,6 +297,9 @@ def edit_opportunity(id):
 
     db.session.commit()
     flash('Opportunity updated successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('opportunities'))
 
 
@@ -315,6 +381,9 @@ def edit_support_case(id):
 
     db.session.commit()
     flash('Support case updated successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('support_cases'))
 
 
@@ -377,6 +446,9 @@ def add_follow_up():
     db.session.add(follow_up)
     db.session.commit()
     flash('Follow-up created successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('follow_ups'))
 
 
@@ -393,6 +465,9 @@ def edit_follow_up(id):
     follow_up.team_member_id = int(request.form['team_member_id']) if request.form.get('team_member_id') else None
     db.session.commit()
     flash('Follow-up updated successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('follow_ups'))
 
 
@@ -402,6 +477,9 @@ def complete_follow_up(id):
     follow_up.status = 'Completed'
     db.session.commit()
     flash('Follow-up marked as completed', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(request.referrer or url_for('follow_ups'))
 
 
@@ -411,6 +489,9 @@ def delete_follow_up(id):
     db.session.delete(follow_up)
     db.session.commit()
     flash('Follow-up deleted successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('follow_ups'))
 
 
@@ -541,6 +622,9 @@ def update_skill_rating():
         db.session.add(rating)
     db.session.commit()
 
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     redirect_args = {}
     if request.form.get('filter_region'):
         redirect_args['region'] = request.form['filter_region']
@@ -615,7 +699,48 @@ def generate_report():
         return send_file(filepath, as_attachment=True, download_name='se_team_report.csv')
 
 
+def migrate_db():
+    """Add new opportunity columns if they don't exist and migrate old stage values."""
+    from sqlalchemy import inspect
+    inspector = inspect(db.engine)
+    existing_cols = {col['name'] for col in inspector.get_columns('opportunities')}
+
+    new_cols = {
+        'salesforce_link': 'VARCHAR(500)',
+        'confidence': 'INTEGER',
+        'sales_rep': 'VARCHAR(100)',
+        'products': 'VARCHAR(500)',
+        'rfp': 'VARCHAR(1)',
+        'demo': 'VARCHAR(1)',
+        'pov_status': 'VARCHAR(20)',
+        'latest_update_date': 'DATE',
+        'latest_update_notes': 'TEXT',
+    }
+    for col_name, col_type in new_cols.items():
+        if col_name not in existing_cols:
+            db.session.execute(db.text(f'ALTER TABLE opportunities ADD COLUMN {col_name} {col_type}'))
+
+    # Migrate old text stages to numeric 1-6
+    stage_map = {
+        'Prospecting': '1', 'Qualification': '2', 'Demo': '3',
+        'POC': '4', 'Negotiation': '5', 'Closed Won': '6', 'Closed Lost': '6',
+    }
+    for old, new in stage_map.items():
+        db.session.execute(
+            db.text("UPDATE opportunities SET stage = :new WHERE stage = :old"),
+            {'new': new, 'old': old}
+        )
+    # Set POV status for old POC-stage records
+    if 'pov_status' not in existing_cols:
+        db.session.execute(
+            db.text("UPDATE opportunities SET pov_status = 'None' WHERE pov_status IS NULL")
+        )
+
+    db.session.commit()
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        migrate_db()
     app.run(debug=True)

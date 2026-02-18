@@ -1,116 +1,420 @@
 {% extends "base.html" %}
 
-{% block title %}1-1 Meetings - SE Team Manager{% endblock %}
+{% block title %}1-1 Prep Dashboard - SE Team Manager{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h2><i class="bi bi-chat-dots"></i> 1-1 Meetings</h2>
-        <p class="text-muted mb-0">Click on a team member to view their 1-1 history and log new meetings.</p>
+<!-- Header + SE Selector -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h2 class="mb-1"><i class="bi bi-chat-dots"></i> 1-1 Prep Dashboard</h2>
+        <p class="text-muted mb-0">Select a team member to prepare for your 1-on-1 meeting.</p>
+    </div>
+    <div class="col-md-3">
+        <form method="get" action="{{ url_for('one_on_ones') }}">
+            <select name="member_id" class="form-select form-select-lg" onchange="this.form.submit()">
+                <option value="">Select a team member...</option>
+                {% for m in team_members %}
+                <option value="{{ m.id }}" {% if selected_member and selected_member.id == m.id %}selected{% endif %}>{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    {% if selected_member %}
+    <div class="col-md-3 d-flex align-items-center justify-content-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMeetingModal">
+            <i class="bi bi-plus-lg"></i> Log 1-1
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+{% if not selected_member %}
+<!-- Empty State -->
+<div class="text-center text-muted py-5">
+    <i class="bi bi-person-lines-fill" style="font-size: 3rem;"></i>
+    <p class="mt-3 fs-5">Choose a team member above to view their 1-1 dashboard.</p>
+</div>
+
+{% else %}
+{% set next_url = url_for('one_on_ones', member_id=selected_member.id) %}
+
+<!-- SE Info Header -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center">
+            <div class="se-avatar me-3" style="width:44px;height:44px;font-size:1.1rem;">{{ selected_member.name[0] }}</div>
+            <div class="flex-grow-1">
+                <h5 class="mb-0">{{ selected_member.name }}</h5>
+                <div class="text-muted small">
+                    {{ selected_member.role }}
+                    {% if selected_member.region %}<span class="ms-2"><i class="bi bi-geo-alt"></i> {{ selected_member.region }}</span>{% endif %}
+                    {% if selected_member.aligned_rep %}<span class="ms-3"><i class="bi bi-people"></i> {{ selected_member.aligned_rep }}{% if selected_member.aligned_rep_2 %}, {{ selected_member.aligned_rep_2 }}{% endif %}</span>{% endif %}
+                </div>
+            </div>
+            <div class="text-end">
+                {% if meetings %}
+                <span class="text-muted small">Last 1-1:</span>
+                <strong class="small">{{ meetings[0].date.strftime('%b %d, %Y') }}</strong>
+                {% else %}
+                <span class="text-muted small">No meetings recorded</span>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
-{% if team_members %}
-<div class="accordion" id="oneOnOneAccordion">
-    {% for member in team_members %}
-    {% set member_meetings = meetings_by_member[member.id] %}
-    <div class="accordion-item mb-2 rounded shadow-sm">
-        <h2 class="accordion-header" id="heading{{ member.id }}">
-            <button class="accordion-button {{ '' if expand_member == member.id else 'collapsed' }}" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapse{{ member.id }}"
-                    aria-expanded="{{ 'true' if expand_member == member.id else 'false' }}"
-                    aria-controls="collapse{{ member.id }}">
-                <div class="d-flex align-items-center w-100 me-3">
-                    <div class="se-avatar me-3">{{ member.name[0] }}</div>
-                    <div class="flex-grow-1">
-                        <strong class="fs-5">{{ member.name }}</strong>
-                        <div class="text-muted small">
-                            {{ member.role }}
-                            {% if member.region %}<span class="ms-2"><i class="bi bi-geo-alt"></i> {{ member.region }}</span>{% endif %}
-                        </div>
-                    </div>
-                    <div class="text-end me-2">
-                        <span class="badge bg-secondary rounded-pill">{{ member_meetings|length }} meeting{{ 's' if member_meetings|length != 1 }}</span>
-                        {% if member_meetings %}
-                        <div class="text-muted small mt-1">Last: {{ member_meetings[0].date.strftime('%b %d, %Y') }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </button>
-        </h2>
-        <div id="collapse{{ member.id }}" class="accordion-collapse collapse {{ 'show' if expand_member == member.id }}"
-             aria-labelledby="heading{{ member.id }}" data-bs-parent="#oneOnOneAccordion">
-            <div class="accordion-body">
-                <!-- Log New 1-1 Button -->
-                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                    <span class="text-muted">{{ member_meetings|length }} recorded meeting{{ 's' if member_meetings|length != 1 }}</span>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMeetingModal"
-                            onclick="preselectMember({{ member.id }})">
-                        <i class="bi bi-plus-lg"></i> Log 1-1 for {{ member.name.split()[0] }}
-                    </button>
-                </div>
+<!-- Summary Stats Row -->
+<div class="row mb-3">
+    <div class="col-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="fs-4 fw-bold text-primary">{{ meetings|length }}</div>
+            <div class="text-muted small">Meetings</div>
+        </div></div>
+    </div>
+    <div class="col-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="fs-4 fw-bold text-primary">{{ active_opps|length }}</div>
+            <div class="text-muted small">Active Opps</div>
+        </div></div>
+    </div>
+    <div class="col-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="fs-4 fw-bold text-primary">{{ open_cases|length }}</div>
+            <div class="text-muted small">Open Cases</div>
+        </div></div>
+    </div>
+    <div class="col-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="fs-4 fw-bold text-primary">{{ open_followups|length }}</div>
+            <div class="text-muted small">Follow-ups</div>
+        </div></div>
+    </div>
+</div>
 
-                {% if member_meetings %}
-                <!-- Meeting Timeline -->
-                <div class="meeting-timeline">
-                    {% for meeting in member_meetings %}
-                    <div class="meeting-entry mb-3">
-                        <div class="card border-start border-4 {{ 'border-success' if meeting.mood in ['Excellent', 'Good'] else 'border-warning' if meeting.mood == 'Neutral' else 'border-danger' if meeting.mood in ['Concerned', 'Needs Attention'] else 'border-primary' }}">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
+<!-- Three-Column Layout -->
+<div class="row">
+    <!-- LEFT: Side Navigation -->
+    <div class="col-lg-2 mb-4">
+        <nav class="nav flex-column nav-pills dashboard-sidenav" id="dashboardNav" role="tablist">
+            <a class="nav-link active" id="tab-meetings" data-bs-toggle="pill" href="#section-meetings" role="tab">
+                <i class="bi bi-journal-text me-2"></i>Meeting Notes
+            </a>
+            <a class="nav-link" id="tab-opps" data-bs-toggle="pill" href="#section-opps" role="tab">
+                <i class="bi bi-briefcase me-2"></i>Opportunities
+            </a>
+            <a class="nav-link" id="tab-povs" data-bs-toggle="pill" href="#section-povs" role="tab">
+                <i class="bi bi-trophy me-2"></i>Live POVs
+            </a>
+            <a class="nav-link" id="tab-cases" data-bs-toggle="pill" href="#section-cases" role="tab">
+                <i class="bi bi-life-preserver me-2"></i>Support Cases
+            </a>
+            <a class="nav-link" id="tab-skills" data-bs-toggle="pill" href="#section-skills" role="tab">
+                <i class="bi bi-star me-2"></i>Skill Matrix
+            </a>
+            <a class="nav-link" id="tab-notes" data-bs-toggle="pill" href="#section-notes" role="tab">
+                <i class="bi bi-sticky me-2"></i>Notes
+            </a>
+        </nav>
+    </div>
+
+    <!-- CENTER: Tab Content Panels -->
+    <div class="col-lg-6 mb-4">
+        <div class="tab-content" id="dashboardContent">
+
+            <!-- ==================== MEETING NOTES ==================== -->
+            <div class="tab-pane fade show active" id="section-meetings" role="tabpanel">
+                <div class="card dashboard-panel">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-journal-text me-2"></i>Meeting Notes ({{ meetings|length }})</span>
+                        <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addMeetingModal"><i class="bi bi-plus-lg"></i> Add</button>
+                    </div>
+                    <div class="card-body dashboard-content-scroll">
+                        {% if meetings %}
+                        {% for meeting in meetings %}
+                        <div class="meeting-entry mb-3">
+                            <div class="card border-start border-4 {{ 'border-success' if meeting.mood in ['Excellent', 'Good'] else 'border-warning' if meeting.mood == 'Neutral' else 'border-danger' if meeting.mood in ['Concerned', 'Needs Attention'] else 'border-primary' }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="mb-0">
                                             <i class="bi bi-calendar-event text-muted me-1"></i>
                                             {{ meeting.date.strftime('%B %d, %Y') }}
                                         </h6>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        {% if meeting.mood %}
-                                        <span class="badge bg-{{ 'success' if meeting.mood in ['Excellent', 'Good'] else 'warning' if meeting.mood == 'Neutral' else 'danger' }}">
-                                            {{ meeting.mood }}
-                                        </span>
-                                        {% endif %}
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMeetingModal{{ meeting.id }}" title="Edit">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteMeetingModal{{ meeting.id }}" title="Delete">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if meeting.mood %}
+                                            <span class="badge bg-{{ 'success' if meeting.mood in ['Excellent', 'Good'] else 'warning' if meeting.mood == 'Neutral' else 'danger' }}">{{ meeting.mood }}</span>
+                                            {% endif %}
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMeetingModal{{ meeting.id }}" title="Edit"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteMeetingModal{{ meeting.id }}" title="Delete"><i class="bi bi-trash"></i></button>
+                                            </div>
                                         </div>
                                     </div>
+                                    {% if meeting.notes %}
+                                    <div class="mb-2">
+                                        <strong class="small text-muted">Notes</strong>
+                                        <p class="card-text mb-0 note-content">{{ meeting.notes }}</p>
+                                    </div>
+                                    {% endif %}
+                                    {% if meeting.action_items %}
+                                    <div>
+                                        <strong class="small text-muted">Action Items</strong>
+                                        <p class="card-text mb-0 note-content">{{ meeting.action_items }}</p>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% if meeting.notes %}
-                                <div class="mb-2">
-                                    <strong class="small text-muted">Notes</strong>
-                                    <p class="card-text mb-0 note-content">{{ meeting.notes }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-chat-square-text" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No 1-1 meetings recorded yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== ACTIVE OPPORTUNITIES ==================== -->
+            <div class="tab-pane fade" id="section-opps" role="tabpanel">
+                <div class="card dashboard-panel">
+                    <div class="card-header"><i class="bi bi-briefcase me-2"></i>Active Opportunities ({{ active_opps|length }})</div>
+                    <div class="card-body dashboard-content-scroll p-0">
+                        {% if active_opps %}
+                        <div class="table-responsive">
+                        <table class="table table-hover mb-0 small">
+                            <thead><tr>
+                                <th>Opportunity</th><th>Account</th><th>Stage</th><th>Conf</th><th>Value</th><th>Rep</th><th>POV</th><th>Close</th><th></th>
+                            </tr></thead>
+                            <tbody>
+                            {% for opp in active_opps %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {% if opp.salesforce_link %}<a href="{{ opp.salesforce_link }}" target="_blank">{{ opp.name }}</a>{% else %}{{ opp.name }}{% endif %}
+                                </td>
+                                <td class="text-muted">{{ opp.account }}</td>
+                                <td><span class="badge bg-primary">{{ opp.stage }}</span></td>
+                                <td>{{ opp.confidence or '-' }}</td>
+                                <td>${{ "{:,.0f}".format(opp.value) }}</td>
+                                <td class="text-muted">{{ opp.sales_rep or '-' }}</td>
+                                <td><span class="badge bg-{{ 'success' if opp.pov_status == 'Tech Win' else 'primary' if opp.pov_status == 'Active' else 'info' if opp.pov_status == 'Completed' else 'secondary' }}">{{ opp.pov_status or 'None' }}</span></td>
+                                <td class="text-muted">{{ opp.close_date.strftime('%b %d') if opp.close_date else '-' }}</td>
+                                <td>
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editOppModal{{ opp.id }}" title="Edit"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-briefcase" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No active opportunities.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== LIVE POVs ==================== -->
+            <div class="tab-pane fade" id="section-povs" role="tabpanel">
+                <div class="card dashboard-panel">
+                    <div class="card-header"><i class="bi bi-trophy me-2"></i>Live POVs ({{ live_povs|length }})</div>
+                    <div class="card-body dashboard-content-scroll p-0">
+                        {% if live_povs %}
+                        <div class="table-responsive">
+                        <table class="table table-hover mb-0 small">
+                            <thead><tr>
+                                <th>Opportunity</th><th>Account</th><th>Stage</th><th>Value</th><th>Products</th><th>Close</th><th></th>
+                            </tr></thead>
+                            <tbody>
+                            {% for pov in live_povs %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {% if pov.salesforce_link %}<a href="{{ pov.salesforce_link }}" target="_blank">{{ pov.name }}</a>{% else %}{{ pov.name }}{% endif %}
+                                </td>
+                                <td class="text-muted">{{ pov.account }}</td>
+                                <td><span class="badge bg-primary">{{ pov.stage }}</span></td>
+                                <td>${{ "{:,.0f}".format(pov.value) }}</td>
+                                <td class="text-muted">{{ pov.products or '-' }}</td>
+                                <td class="text-muted">{{ pov.close_date.strftime('%b %d') if pov.close_date else '-' }}</td>
+                                <td>
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editPovModal{{ pov.id }}" title="Edit"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-trophy" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No active POVs.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SUPPORT CASES ==================== -->
+            <div class="tab-pane fade" id="section-cases" role="tabpanel">
+                <div class="card dashboard-panel">
+                    <div class="card-header"><i class="bi bi-life-preserver me-2"></i>Support Cases ({{ open_cases|length }})</div>
+                    <div class="card-body dashboard-content-scroll p-0">
+                        {% if open_cases %}
+                        <table class="table table-hover mb-0">
+                            <thead><tr>
+                                <th>Title</th><th>Customer</th><th>Status</th><th>Priority</th><th></th>
+                            </tr></thead>
+                            <tbody>
+                            {% for case in open_cases %}
+                            <tr>
+                                <td class="fw-semibold">{{ case.title }}</td>
+                                <td class="small text-muted">{{ case.customer or '-' }}</td>
+                                <td><span class="badge bg-{{ 'primary' if case.status == 'In Progress' else 'warning' if case.status == 'Pending' else 'secondary' }}">{{ case.status }}</span></td>
+                                <td><span class="badge bg-{{ 'danger' if case.priority == 'High' else 'warning' if case.priority == 'Medium' else 'secondary' }}">{{ case.priority }}</span></td>
+                                <td>
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editCaseModal{{ case.id }}" title="Edit"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-life-preserver" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No open support cases.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SKILL MATRIX ==================== -->
+            <div class="tab-pane fade" id="section-skills" role="tabpanel">
+                <div class="card dashboard-panel">
+                    <div class="card-header"><i class="bi bi-star me-2"></i>Skill Matrix</div>
+                    <div class="card-body dashboard-content-scroll p-0">
+                        <table class="table mb-0">
+                            <thead><tr><th>Skill</th><th>Proficiency</th></tr></thead>
+                            <tbody>
+                            {% for skill_name in skills %}
+                            {% set prof = skill_ratings.get(skill_name, "Haven't Started") %}
+                            <tr>
+                                <td class="fw-semibold">{{ skill_name }}</td>
+                                <td>
+                                    <form action="{{ url_for('update_skill_rating') }}" method="post" class="d-inline">
+                                        <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
+                                        <input type="hidden" name="skill" value="{{ skill_name }}">
+                                        <input type="hidden" name="next" value="{{ next_url }}">
+                                        {% set prof_class = 'expert' if prof == 'Expert' else 'pov-ready' if prof == 'POV Ready' else 'demo-ready' if prof == 'Demo Ready' else 'training' if prof == 'Training' else 'havent-started' %}
+                                        <select name="proficiency" class="form-select form-select-sm skill-select proficiency-{{ prof_class }}" onchange="this.form.submit()">
+                                            {% for level in proficiency_levels %}
+                                            <option value="{{ level }}" {% if prof == level %}selected{% endif %}>{{ level }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== NOTES ==================== -->
+            <div class="tab-pane fade" id="section-notes" role="tabpanel">
+                <div class="card dashboard-panel">
+                    <div class="card-header"><i class="bi bi-sticky me-2"></i>Notes ({{ member_notes|length }})</div>
+                    <div class="card-body dashboard-content-scroll">
+                        {% if member_notes %}
+                        {% for note in member_notes %}
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="fw-semibold">{{ note.title }}</div>
+                                    <span class="small text-muted">{{ note.created_at.strftime('%b %d, %Y') }}</span>
+                                </div>
+                                {% if note.tags %}
+                                <div class="mb-1">
+                                    {% for tag in note.tags.split(',') %}
+                                    {% if tag.strip() %}
+                                    <span class="badge bg-light text-dark border me-1" style="font-size:0.7rem;">{{ tag.strip() }}</span>
+                                    {% endif %}
+                                    {% endfor %}
                                 </div>
                                 {% endif %}
-                                {% if meeting.action_items %}
-                                <div>
-                                    <strong class="small text-muted">Action Items</strong>
-                                    <p class="card-text mb-0 note-content">{{ meeting.action_items }}</p>
-                                </div>
+                                {% if note.content %}
+                                <div class="small text-muted note-content" style="max-height:4em;overflow:hidden;">{{ note.content }}</div>
                                 {% endif %}
                             </div>
                         </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-sticky" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No notes for this team member.</p>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endfor %}
                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- RIGHT: Follow-ups (Always Visible) -->
+    <div class="col-lg-4 mb-4">
+        <div class="card dashboard-panel">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-check2-square me-2"></i>Follow-up Items ({{ open_followups|length }})</span>
+                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addFollowupModal"><i class="bi bi-plus-lg"></i> Add</button>
+            </div>
+            <div class="card-body followup-panel-scroll p-0">
+                {% if open_followups %}
+                <ul class="list-group list-group-flush">
+                    {% for fu in open_followups %}
+                    <li class="list-group-item {{ 'followup-overdue' if fu.due_date < today }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="fw-semibold small">{{ fu.title }}</div>
+                            <div class="btn-group btn-group-sm ms-2 flex-shrink-0">
+                                <form action="{{ url_for('complete_follow_up', id=fu.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="next" value="{{ next_url }}">
+                                    <button type="submit" class="btn btn-outline-success btn-sm" title="Mark Complete"><i class="bi bi-check-lg"></i></button>
+                                </form>
+                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editFollowupModal{{ fu.id }}" title="Edit"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteFollowupModal{{ fu.id }}" title="Delete"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                        {% if fu.description %}
+                        <div class="small text-muted mt-1" style="max-height:2em;overflow:hidden;">{{ fu.description }}</div>
+                        {% endif %}
+                        <div class="small mt-1">
+                            <span class="{{ 'text-danger fw-bold' if fu.due_date < today else 'text-muted' }}">
+                                <i class="bi bi-clock me-1"></i>{{ fu.due_date.strftime('%b %d, %Y') }}{% if fu.due_date < today %} (Overdue){% endif %}
+                            </span>
+                            <span class="ms-1 badge bg-{{ 'danger' if fu.priority == 'High' else 'warning' if fu.priority == 'Medium' else 'secondary' }}">{{ fu.priority }}</span>
+                            <span class="badge bg-{{ 'primary' if fu.status == 'In Progress' else 'secondary' }}">{{ fu.status }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
                 {% else %}
                 <div class="text-center text-muted py-4">
-                    <i class="bi bi-chat-square-text" style="font-size: 2rem;"></i>
-                    <p class="mt-2 mb-0">No 1-1 meetings recorded yet for {{ member.name.split()[0] }}.</p>
+                    <i class="bi bi-check2-square" style="font-size: 2rem;"></i>
+                    <p class="mt-2 mb-0">No open follow-ups.</p>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="alert alert-info">No team members found. Add team members first to start logging 1-1 meetings.</div>
-{% endif %}
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
 
 <!-- Add Meeting Modal -->
 <div class="modal fade" id="addMeetingModal" tabindex="-1">
@@ -118,31 +422,21 @@
         <div class="modal-content">
             <form action="{{ url_for('add_one_on_one') }}" method="post">
                 <div class="modal-header">
-                    <h5 class="modal-title">Log 1-1 Meeting</h5>
+                    <h5 class="modal-title">Log 1-1 Meeting with {{ selected_member.name }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Team Member *</label>
-                            <select name="team_member_id" id="addMeetingMemberSelect" class="form-select" required>
-                                <option value="">Select member...</option>
-                                {% for member in team_members %}
-                                <option value="{{ member.id }}">{{ member.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
                             <label class="form-label">Date *</label>
                             <input type="date" name="date" class="form-control" required>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Mood</label>
                             <select name="mood" class="form-select">
                                 <option value="">Select mood...</option>
-                                {% for m in moods %}
-                                <option value="{{ m }}">{{ m }}</option>
-                                {% endfor %}
+                                {% for m in moods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
                             </select>
                         </div>
                     </div>
@@ -164,10 +458,8 @@
     </div>
 </div>
 
-<!-- Edit and Delete Modals -->
-{% for member in team_members %}
-{% for meeting in meetings_by_member[member.id] %}
-<!-- Edit Modal -->
+<!-- Edit / Delete Meeting Modals -->
+{% for meeting in meetings %}
 <div class="modal fade" id="editMeetingModal{{ meeting.id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -177,26 +469,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Team Member *</label>
-                            <select name="team_member_id" class="form-select" required>
-                                {% for m in team_members %}
-                                <option value="{{ m.id }}" {% if meeting.team_member_id == m.id %}selected{% endif %}>{{ m.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
                             <label class="form-label">Date *</label>
                             <input type="date" name="date" class="form-control" value="{{ meeting.date.strftime('%Y-%m-%d') }}" required>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Mood</label>
                             <select name="mood" class="form-select">
                                 <option value="">Select mood...</option>
-                                {% for m in moods %}
-                                <option value="{{ m }}" {% if meeting.mood == m %}selected{% endif %}>{{ m }}</option>
-                                {% endfor %}
+                                {% for m in moods %}<option value="{{ m }}" {% if meeting.mood == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
                             </select>
                         </div>
                     </div>
@@ -217,8 +500,6 @@
         </div>
     </div>
 </div>
-
-<!-- Delete Modal -->
 <div class="modal fade" id="deleteMeetingModal{{ meeting.id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -228,7 +509,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete this 1-1 meeting with <strong>{{ meeting.team_member.name }}</strong> on {{ meeting.date.strftime('%Y-%m-%d') }}?</p>
+                    <p>Are you sure you want to delete this 1-1 meeting with <strong>{{ selected_member.name }}</strong> on {{ meeting.date.strftime('%Y-%m-%d') }}?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -239,11 +520,402 @@
     </div>
 </div>
 {% endfor %}
+
+<!-- Edit Opportunity Modals -->
+{% for opp in active_opps %}
+<div class="modal fade" id="editOppModal{{ opp.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_opportunity', id=opp.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Opportunity</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Account *</label>
+                            <input type="text" name="account" class="form-control" value="{{ opp.account }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Opportunity *</label>
+                            <input type="text" name="name" class="form-control" value="{{ opp.name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Salesforce Link</label>
+                        <input type="url" name="salesforce_link" class="form-control" value="{{ opp.salesforce_link or '' }}" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Products</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for p in products_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="products" value="{{ p }}" id="opp{{ opp.id }}_prod_{{ p }}" {% if opp.products and p in opp.products.split(',') %}checked{% endif %}>
+                                <label class="form-check-label" for="opp{{ opp.id }}_prod_{{ p }}">{{ p }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sales Rep</label>
+                            <input type="text" name="sales_rep" class="form-control" value="{{ opp.sales_rep or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Primary SE *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                {% for m in team_members %}<option value="{{ m.id }}" {% if opp.team_member_id == m.id %}selected{% endif %}>{{ m.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opp Value ($)</label>
+                            <input type="number" name="value" class="form-control" value="{{ opp.value }}" step="0.01">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stage (1-6)</label>
+                            <select name="stage" class="form-select">
+                                {% for s in opportunity_stages %}<option value="{{ s }}" {% if opp.stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Expected Close Date</label>
+                            <input type="date" name="close_date" class="form-control" value="{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Confidence (1-10)</label>
+                            <select name="confidence" class="form-select">
+                                <option value="">-</option>
+                                {% for c in range(1, 11) %}<option value="{{ c }}" {% if opp.confidence == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">RFP</label>
+                            <select name="rfp" class="form-select">
+                                <option value="N" {% if opp.rfp != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if opp.rfp == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Demo</label>
+                            <select name="demo" class="form-select">
+                                <option value="N" {% if opp.demo != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if opp.demo == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">POV</label>
+                            <select name="pov_status" class="form-select">
+                                {% for ps in pov_statuses %}<option value="{{ ps }}" {% if opp.pov_status == ps %}selected{% endif %}>{{ ps }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="form-section-title">Latest Update</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="latest_update_date" class="form-control" value="{{ opp.latest_update_date.strftime('%Y-%m-%d') if opp.latest_update_date else '' }}">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="latest_update_notes" class="form-control" rows="2">{{ opp.latest_update_notes or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endfor %}
 
-<script>
-function preselectMember(memberId) {
-    document.getElementById('addMeetingMemberSelect').value = memberId;
-}
-</script>
+<!-- Edit POV Modals (POVs are opportunities with Active POV status) -->
+{% for pov in live_povs %}
+<div class="modal fade" id="editPovModal{{ pov.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_opportunity', id=pov.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit POV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Account *</label>
+                            <input type="text" name="account" class="form-control" value="{{ pov.account }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Opportunity *</label>
+                            <input type="text" name="name" class="form-control" value="{{ pov.name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Salesforce Link</label>
+                        <input type="url" name="salesforce_link" class="form-control" value="{{ pov.salesforce_link or '' }}" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Products</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for p in products_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="products" value="{{ p }}" id="pov{{ pov.id }}_prod_{{ p }}" {% if pov.products and p in pov.products.split(',') %}checked{% endif %}>
+                                <label class="form-check-label" for="pov{{ pov.id }}_prod_{{ p }}">{{ p }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sales Rep</label>
+                            <input type="text" name="sales_rep" class="form-control" value="{{ pov.sales_rep or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Primary SE *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                {% for m in team_members %}<option value="{{ m.id }}" {% if pov.team_member_id == m.id %}selected{% endif %}>{{ m.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opp Value ($)</label>
+                            <input type="number" name="value" class="form-control" value="{{ pov.value }}" step="0.01">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stage (1-6)</label>
+                            <select name="stage" class="form-select">
+                                {% for s in opportunity_stages %}<option value="{{ s }}" {% if pov.stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Expected Close Date</label>
+                            <input type="date" name="close_date" class="form-control" value="{{ pov.close_date.strftime('%Y-%m-%d') if pov.close_date else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Confidence (1-10)</label>
+                            <select name="confidence" class="form-select">
+                                <option value="">-</option>
+                                {% for c in range(1, 11) %}<option value="{{ c }}" {% if pov.confidence == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">RFP</label>
+                            <select name="rfp" class="form-select">
+                                <option value="N" {% if pov.rfp != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if pov.rfp == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Demo</label>
+                            <select name="demo" class="form-select">
+                                <option value="N" {% if pov.demo != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if pov.demo == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">POV</label>
+                            <select name="pov_status" class="form-select">
+                                {% for ps in pov_statuses %}<option value="{{ ps }}" {% if pov.pov_status == ps %}selected{% endif %}>{{ ps }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="form-section-title">Latest Update</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="latest_update_date" class="form-control" value="{{ pov.latest_update_date.strftime('%Y-%m-%d') if pov.latest_update_date else '' }}">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="latest_update_notes" class="form-control" rows="2">{{ pov.latest_update_notes or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Edit Support Case Modals -->
+{% for case in open_cases %}
+<div class="modal fade" id="editCaseModal{{ case.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_support_case', id=case.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Support Case</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" value="{{ case.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Customer</label>
+                        <input type="text" name="customer" class="form-control" value="{{ case.customer or '' }}">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                {% for s in case_statuses %}<option value="{{ s }}" {% if case.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select name="priority" class="form-select">
+                                {% for p in priorities %}<option value="{{ p }}" {% if case.priority == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ case.description or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Follow-up Modal -->
+<div class="modal fade" id="addFollowupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('add_follow_up') }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Follow-up for {{ selected_member.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Due Date *</label>
+                            <input type="date" name="due_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select name="priority" class="form-select">
+                                {% for p in priorities %}<option value="{{ p }}" {% if p == 'Medium' %}selected{% endif %}>{{ p }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Follow-up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit / Delete Follow-up Modals -->
+{% for fu in open_followups %}
+<div class="modal fade" id="editFollowupModal{{ fu.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_follow_up', id=fu.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Follow-up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" class="form-control" value="{{ fu.title }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Due Date *</label>
+                            <input type="date" name="due_date" class="form-control" value="{{ fu.due_date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select name="priority" class="form-select">
+                                {% for p in priorities %}<option value="{{ p }}" {% if fu.priority == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                {% for s in followup_statuses %}<option value="{{ s }}" {% if fu.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ fu.description or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteFollowupModal{{ fu.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('delete_follow_up', id=fu.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Follow-up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <p>Are you sure you want to delete the follow-up <strong>{{ fu.title }}</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endif %}
 {% endblock %}

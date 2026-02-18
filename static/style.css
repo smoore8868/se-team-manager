@@ -402,3 +402,60 @@ a:hover {
     background-color: #f15822;
     border-color: #f15822;
 }
+
+/* 1-1 Prep Dashboard Panels */
+.dashboard-panel > .card-header {
+    background-color: #1a2332;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+}
+
+.dashboard-panel .list-group-item {
+    padding: 0.6rem 1rem;
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Overdue follow-up highlighting */
+.followup-overdue {
+    background-color: #fff5f5 !important;
+    border-left: 3px solid #dc3545 !important;
+}
+
+/* Dashboard side navigation */
+.dashboard-sidenav {
+    position: sticky;
+    top: 80px;
+}
+
+.dashboard-sidenav .nav-link {
+    color: #1a2332;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.4rem;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+}
+
+.dashboard-sidenav .nav-link:hover {
+    background-color: #fdeee8;
+    color: #f15822;
+}
+
+.dashboard-sidenav .nav-link.active {
+    background-color: #f15822;
+    color: #fff;
+}
+
+/* Content and follow-up scrollable areas */
+.dashboard-content-scroll {
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.followup-panel-scroll {
+    max-height: 65vh;
+    overflow-y: auto;
+}
