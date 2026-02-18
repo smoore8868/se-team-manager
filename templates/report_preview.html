@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Report Preview - SE Team Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-file-earmark-bar-graph"></i> Report Preview</h2>
+            <p class="text-muted mb-0">
+                Generated {{ generated_at }}
+                {% if start_date and end_date %}
+                    &mdash; Date Range: {{ start_date }} to {{ end_date }}
+                {% elif start_date %}
+                    &mdash; From: {{ start_date }}
+                {% elif end_date %}
+                    &mdash; Through: {{ end_date }}
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <form action="{{ url_for('generate_report') }}" method="post" class="d-inline">
+                {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
+                {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
+                {% for id in selected.team_members %}<input type="hidden" name="team_members" value="{{ id }}">{% endfor %}
+                {% for id in selected.one_on_ones %}<input type="hidden" name="one_on_ones" value="{{ id }}">{% endfor %}
+                {% for id in selected.opportunities %}<input type="hidden" name="opportunities" value="{{ id }}">{% endfor %}
+                {% for id in selected.live_povs %}<input type="hidden" name="live_povs" value="{{ id }}">{% endfor %}
+                {% for id in selected.support_cases %}<input type="hidden" name="support_cases" value="{{ id }}">{% endfor %}
+                {% for id in selected.follow_ups %}<input type="hidden" name="follow_ups" value="{{ id }}">{% endfor %}
+                {% for id in selected.notes %}<input type="hidden" name="notes" value="{{ id }}">{% endfor %}
+                {% for id in selected.skill_matrix %}<input type="hidden" name="skill_matrix" value="{{ id }}">{% endfor %}
+                <button type="submit" name="format" value="pdf" class="btn btn-danger me-2">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </button>
+                <button type="submit" name="format" value="csv" class="btn btn-success me-2">
+                    <i class="bi bi-filetype-csv"></i> Download CSV
+                </button>
+            </form>
+            <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if not has_data %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i> No items were selected. Please go back and select items to include in your report.
+</div>
+{% else %}
+
+{% if data.team_members %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-person-badge"></i> Team Members</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Region</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in data.team_members %}
+                <tr>
+                    <td>{{ member.name }}</td>
+                    <td>{{ member.role or '' }}</td>
+                    <td>{{ member.region or '' }}</td>
+                    <td>{{ member.email or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.one_on_ones %}
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-chat-dots"></i> 1-1 Meetings</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Team Member</th>
+                    <th>Date</th>
+                    <th>Mood</th>
+                    <th>Notes</th>
+                    <th>Action Items</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meeting in data.one_on_ones %}
+                <tr>
+                    <td>{{ meeting.team_member.name }}</td>
+                    <td>{{ meeting.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ meeting.mood or '' }}</td>
+                    <td>{{ meeting.notes or '' }}</td>
+                    <td>{{ meeting.action_items or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.opportunities %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Opportunities</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Team Member</th>
+                    <th>Stage</th>
+                    <th>Confidence</th>
+                    <th>Sales Rep</th>
+                    <th>Products</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for opp in data.opportunities %}
+                <tr>
+                    <td>{{ opp.name }}</td>
+                    <td>{{ opp.team_member.name }}</td>
+                    <td>{{ opp.stage or '' }}</td>
+                    <td>{{ opp.confidence or '' }}{% if opp.confidence %}%{% endif %}</td>
+                    <td>{{ opp.sales_rep or '' }}</td>
+                    <td>{{ opp.products or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.live_povs %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-trophy"></i> Live POVs</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Team Member</th>
+                    <th>POV Status</th>
+                    <th>Stage</th>
+                    <th>Products</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pov in data.live_povs %}
+                <tr>
+                    <td>{{ pov.name }}</td>
+                    <td>{{ pov.team_member.name }}</td>
+                    <td>{{ pov.pov_status or '' }}</td>
+                    <td>{{ pov.stage or '' }}</td>
+                    <td>{{ pov.products or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.support_cases %}
+<div class="card mb-4">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0"><i class="bi bi-life-preserver"></i> Support Cases</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Team Member</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Created</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in data.support_cases %}
+                <tr>
+                    <td>{{ case.title }}</td>
+                    <td>{{ case.team_member.name }}</td>
+                    <td>{{ case.status or '' }}</td>
+                    <td>{{ case.priority or '' }}</td>
+                    <td>{{ case.created_at.strftime('%Y-%m-%d') if case.created_at else '' }}</td>
+                    <td>{{ case.description or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.follow_ups %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-check2-square"></i> Follow-ups</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Team Member</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data.follow_ups %}
+                <tr>
+                    <td>{{ item.title }}</td>
+                    <td>{{ item.team_member.name }}</td>
+                    <td>{{ item.due_date.strftime('%Y-%m-%d') if item.due_date else '' }}</td>
+                    <td>{{ item.status or '' }}</td>
+                    <td>{{ item.description or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.notes %}
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Notes</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Team Member</th>
+                    <th>Date</th>
+                    <th>Content</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in data.notes %}
+                <tr>
+                    <td>{{ note.title }}</td>
+                    <td>{{ note.team_member.name }}</td>
+                    <td>{{ note.created_at.strftime('%Y-%m-%d') if note.created_at else '' }}</td>
+                    <td>{{ note.content or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if data.skill_matrix %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-grid-3x3-gap"></i> Skill Matrix</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Team Member</th>
+                    <th>Password Safe</th>
+                    <th>EPM Win-Mac</th>
+                    <th>EPM-L</th>
+                    <th>Remote Support</th>
+                    <th>PRA</th>
+                    <th>AD Bridge</th>
+                    <th>Insights</th>
+                    <th>Entitle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in data.skill_matrix %}
+                <tr>
+                    <td>{{ entry.member.name }}</td>
+                    {% for skill in ['Password Safe', 'EPM Win-Mac', 'EPM-L', 'Remote Support', 'PRA', 'AD Bridge', 'Insights', 'Entitle'] %}
+                    <td>{{ entry.ratings.get(skill, '') }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

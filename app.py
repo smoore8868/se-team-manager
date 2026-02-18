@@ -662,6 +662,48 @@ def reports():
                            selected_member_id=selected_member_id)
 
 
+@app.route('/reports/preview', methods=['POST'])
+def preview_report():
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+
+    selected = {
+        'team_members': request.form.getlist('team_members'),
+        'one_on_ones': request.form.getlist('one_on_ones'),
+        'opportunities': request.form.getlist('opportunities'),
+        'support_cases': request.form.getlist('support_cases'),
+        'follow_ups': request.form.getlist('follow_ups'),
+        'notes': request.form.getlist('notes'),
+        'skill_matrix': request.form.getlist('skill_matrix'),
+        'live_povs': request.form.getlist('live_povs')
+    }
+
+    data = {
+        'team_members': TeamMember.query.filter(TeamMember.id.in_(selected['team_members'])).all() if selected['team_members'] else [],
+        'one_on_ones': OneOnOne.query.filter(OneOnOne.id.in_(selected['one_on_ones'])).all() if selected['one_on_ones'] else [],
+        'opportunities': Opportunity.query.filter(Opportunity.id.in_(selected['opportunities'])).all() if selected['opportunities'] else [],
+        'support_cases': SupportCase.query.filter(SupportCase.id.in_(selected['support_cases'])).all() if selected['support_cases'] else [],
+        'follow_ups': FollowUp.query.filter(FollowUp.id.in_(selected['follow_ups'])).all() if selected['follow_ups'] else [],
+        'notes': Note.query.filter(Note.id.in_(selected['notes'])).all() if selected['notes'] else [],
+        'live_povs': Opportunity.query.filter(Opportunity.id.in_(selected['live_povs']), Opportunity.pov_status == 'Active').all() if selected['live_povs'] else [],
+        'skill_matrix': []
+    }
+
+    if selected['skill_matrix']:
+        sm_members = TeamMember.query.filter(TeamMember.id.in_(selected['skill_matrix'])).all()
+        for member in sm_members:
+            ratings = {r.skill: r.proficiency for r in SkillRating.query.filter_by(team_member_id=member.id).all()}
+            data['skill_matrix'].append({'member': member, 'ratings': ratings})
+
+    has_data = any([data['team_members'], data['one_on_ones'], data['opportunities'],
+                    data['support_cases'], data['follow_ups'], data['notes'],
+                    data['live_povs'], data['skill_matrix']])
+
+    return render_template('report_preview.html', data=data, selected=selected,
+                           start_date=start_date, end_date=end_date, has_data=has_data,
+                           generated_at=datetime.now().strftime('%Y-%m-%d %H:%M'))
+
+
 @app.route('/reports/generate', methods=['POST'])
 def generate_report():
     from reports import generate_pdf_report, generate_csv_report
