@@ -534,9 +534,9 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('edit_opportunity', id=opp.id) }}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Opportunity</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                    <h5 class="modal-title" style="color: #fff; font-weight: 600;">Edit Opportunity</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="next" value="{{ next_url }}">
