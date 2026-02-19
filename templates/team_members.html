@@ -31,24 +31,23 @@
                 <tbody>
                     {% for member in members %}
                     <tr>
-                        <td>{{ member.name }}</td>
+                        <td><strong>{{ member.name }}</strong></td>
                         <td>{{ member.email }}</td>
                         <td><span class="badge bg-secondary">{{ member.region }}</span></td>
                         <td>{{ member.location or '-' }}</td>
                         <td>
-                            {% if member.aligned_rep %}
-                            <span class="badge bg-primary">{{ member.aligned_rep }}</span>
-                            {% endif %}
-                            {% if member.aligned_rep_2 %}
-                            <span class="badge bg-info">{{ member.aligned_rep_2 }}</span>
-                            {% endif %}
-                            {% if member.aligned_rep_3 %}
-                            <span class="badge bg-success">{{ member.aligned_rep_3 }}</span>
-                            {% endif %}
-                            {% if member.aligned_rep_4 %}
-                            <span class="badge bg-warning text-dark">{{ member.aligned_rep_4 }}</span>
-                            {% endif %}
-                            {% if not member.aligned_rep and not member.aligned_rep_2 and not member.aligned_rep_3 and not member.aligned_rep_4 %}
+                            {% set reps = [] %}
+                            {% if member.aligned_rep %}{% set _ = reps.append((member.aligned_rep, member.aligned_rep_location)) %}{% endif %}
+                            {% if member.aligned_rep_2 %}{% set _ = reps.append((member.aligned_rep_2, member.aligned_rep_2_location)) %}{% endif %}
+                            {% if member.aligned_rep_3 %}{% set _ = reps.append((member.aligned_rep_3, member.aligned_rep_3_location)) %}{% endif %}
+                            {% if member.aligned_rep_4 %}{% set _ = reps.append((member.aligned_rep_4, member.aligned_rep_4_location)) %}{% endif %}
+                            {% if reps %}
+                            <ul class="list-unstyled mb-0 small">
+                                {% for rep_name, rep_territory in reps %}
+                                <li>{{ rep_name }}{% if rep_territory %} <span class="text-muted">- {{ rep_territory }}</span>{% endif %}</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
                             -
                             {% endif %}
                         </td>
