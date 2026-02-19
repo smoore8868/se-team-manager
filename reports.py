@@ -41,17 +41,20 @@ def generate_pdf_report(data, start_date=None, end_date=None):
     # Team Members Section
     if data['team_members']:
         story.append(Paragraph("Team Members", styles['SectionTitle']))
-        table_data = [['Name', 'Email', 'Region', 'Primary Rep', 'Secondary Rep', 'Role']]
+        table_data = [['Name', 'Email', 'Region', 'Location', 'Rep 1', 'Rep 2', 'Rep 3', 'Rep 4', 'Role']]
         for member in data['team_members']:
             table_data.append([
                 member.name,
                 member.email,
                 member.region,
+                member.location or '-',
                 member.aligned_rep or '-',
                 member.aligned_rep_2 or '-',
+                member.aligned_rep_3 or '-',
+                member.aligned_rep_4 or '-',
                 member.role
             ])
-        table = Table(table_data, colWidths=[1.3*inch, 1.6*inch, 0.8*inch, 1.2*inch, 1.2*inch, 0.8*inch])
+        table = Table(table_data, colWidths=[1*inch, 1.2*inch, 0.6*inch, 0.7*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f15822')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -254,14 +257,21 @@ def generate_csv_report(data, start_date=None, end_date=None):
         # Team Members
         if data['team_members']:
             writer.writerow(['TEAM MEMBERS'])
-            writer.writerow(['Name', 'Email', 'Region', 'Primary Rep', 'Secondary Rep', 'Role', 'Created'])
+            writer.writerow(['Name', 'Email', 'Region', 'Location', 'Rep 1', 'Rep 1 Location', 'Rep 2', 'Rep 2 Location', 'Rep 3', 'Rep 3 Location', 'Rep 4', 'Rep 4 Location', 'Role', 'Created'])
             for member in data['team_members']:
                 writer.writerow([
                     member.name,
                     member.email,
                     member.region,
+                    member.location or '',
                     member.aligned_rep or '',
+                    member.aligned_rep_location or '',
                     member.aligned_rep_2 or '',
+                    member.aligned_rep_2_location or '',
+                    member.aligned_rep_3 or '',
+                    member.aligned_rep_3_location or '',
+                    member.aligned_rep_4 or '',
+                    member.aligned_rep_4_location or '',
                     member.role,
                     member.created_at.strftime('%Y-%m-%d')
                 ])

@@ -83,7 +83,14 @@ def add_team_member():
         region=request.form['region'],
         aligned_rep=request.form.get('aligned_rep', ''),
         aligned_rep_2=request.form.get('aligned_rep_2', ''),
-        role=request.form.get('role', 'SE')
+        aligned_rep_3=request.form.get('aligned_rep_3', ''),
+        aligned_rep_4=request.form.get('aligned_rep_4', ''),
+        location=request.form.get('location', ''),
+        aligned_rep_location=request.form.get('aligned_rep_location', ''),
+        aligned_rep_2_location=request.form.get('aligned_rep_2_location', ''),
+        aligned_rep_3_location=request.form.get('aligned_rep_3_location', ''),
+        aligned_rep_4_location=request.form.get('aligned_rep_4_location', ''),
+        role=request.form.get('role', 'Senior Solutions Engineer')
     )
     db.session.add(member)
     db.session.commit()
@@ -99,7 +106,14 @@ def edit_team_member(id):
     member.region = request.form['region']
     member.aligned_rep = request.form.get('aligned_rep', '')
     member.aligned_rep_2 = request.form.get('aligned_rep_2', '')
-    member.role = request.form.get('role', 'SE')
+    member.aligned_rep_3 = request.form.get('aligned_rep_3', '')
+    member.aligned_rep_4 = request.form.get('aligned_rep_4', '')
+    member.location = request.form.get('location', '')
+    member.aligned_rep_location = request.form.get('aligned_rep_location', '')
+    member.aligned_rep_2_location = request.form.get('aligned_rep_2_location', '')
+    member.aligned_rep_3_location = request.form.get('aligned_rep_3_location', '')
+    member.aligned_rep_4_location = request.form.get('aligned_rep_4_location', '')
+    member.role = request.form.get('role', 'Senior Solutions Engineer')
     db.session.commit()
     flash('Team member updated successfully', 'success')
     return redirect(url_for('team_members'))
@@ -819,6 +833,22 @@ def migrate_db():
     for col_name, col_type in sc_new_cols.items():
         if col_name not in sc_cols:
             db.session.execute(db.text(f'ALTER TABLE support_cases ADD COLUMN {col_name} {col_type}'))
+    db.session.commit()
+
+    # Migrate team_members table for new rep/location columns
+    tm_cols = {col['name'] for col in inspector.get_columns('team_members')}
+    tm_new_cols = {
+        'aligned_rep_3': 'VARCHAR(100)',
+        'aligned_rep_4': 'VARCHAR(100)',
+        'location': 'VARCHAR(100)',
+        'aligned_rep_location': 'VARCHAR(100)',
+        'aligned_rep_2_location': 'VARCHAR(100)',
+        'aligned_rep_3_location': 'VARCHAR(100)',
+        'aligned_rep_4_location': 'VARCHAR(100)',
+    }
+    for col_name, col_type in tm_new_cols.items():
+        if col_name not in tm_cols:
+            db.session.execute(db.text(f'ALTER TABLE team_members ADD COLUMN {col_name} {col_type}'))
     db.session.commit()
 
 

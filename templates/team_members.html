@@ -21,6 +21,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Region</th>
+                        <th>Location</th>
                         <th>Aligned Reps</th>
                         <th>Role</th>
                         <th>Created</th>
@@ -33,6 +34,7 @@
                         <td>{{ member.name }}</td>
                         <td>{{ member.email }}</td>
                         <td><span class="badge bg-secondary">{{ member.region }}</span></td>
+                        <td>{{ member.location or '-' }}</td>
                         <td>
                             {% if member.aligned_rep %}
                             <span class="badge bg-primary">{{ member.aligned_rep }}</span>
@@ -40,7 +42,13 @@
                             {% if member.aligned_rep_2 %}
                             <span class="badge bg-info">{{ member.aligned_rep_2 }}</span>
                             {% endif %}
-                            {% if not member.aligned_rep and not member.aligned_rep_2 %}
+                            {% if member.aligned_rep_3 %}
+                            <span class="badge bg-success">{{ member.aligned_rep_3 }}</span>
+                            {% endif %}
+                            {% if member.aligned_rep_4 %}
+                            <span class="badge bg-warning text-dark">{{ member.aligned_rep_4 }}</span>
+                            {% endif %}
+                            {% if not member.aligned_rep and not member.aligned_rep_2 and not member.aligned_rep_3 and not member.aligned_rep_4 %}
                             -
                             {% endif %}
                         </td>
@@ -57,7 +65,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No team members found. Add one to get started!</td>
+                        <td colspan="8" class="text-center text-muted">No team members found. Add one to get started!</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -84,13 +92,19 @@
                         <label class="form-label">Email *</label>
                         <input type="email" name="email" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Region *</label>
-                        <select name="region" class="form-select" required>
-                            {% for r in regions %}
-                            <option value="{{ r }}">{{ r }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Region *</label>
+                            <select name="region" class="form-select" required>
+                                {% for r in regions %}
+                                <option value="{{ r }}" {% if r == 'Central' %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SE Location</label>
+                            <input type="text" name="location" class="form-control" placeholder="City, State...">
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -98,13 +112,43 @@
                             <input type="text" name="aligned_rep" class="form-control" placeholder="Sales rep name...">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Secondary Aligned Rep</label>
+                            <label class="form-label">Primary Rep Location</label>
+                            <input type="text" name="aligned_rep_location" class="form-control" placeholder="City, State...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Aligned Rep 2</label>
                             <input type="text" name="aligned_rep_2" class="form-control" placeholder="Sales rep name...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rep 2 Location</label>
+                            <input type="text" name="aligned_rep_2_location" class="form-control" placeholder="City, State...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Aligned Rep 3</label>
+                            <input type="text" name="aligned_rep_3" class="form-control" placeholder="Sales rep name...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rep 3 Location</label>
+                            <input type="text" name="aligned_rep_3_location" class="form-control" placeholder="City, State...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Aligned Rep 4</label>
+                            <input type="text" name="aligned_rep_4" class="form-control" placeholder="Sales rep name...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rep 4 Location</label>
+                            <input type="text" name="aligned_rep_4_location" class="form-control" placeholder="City, State...">
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
-                        <input type="text" name="role" class="form-control" value="SE">
+                        <input type="text" name="role" class="form-control" value="Senior Solutions Engineer">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -136,13 +180,19 @@
                         <label class="form-label">Email *</label>
                         <input type="email" name="email" class="form-control" value="{{ member.email }}" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Region *</label>
-                        <select name="region" class="form-select" required>
-                            {% for r in regions %}
-                            <option value="{{ r }}" {% if member.region == r %}selected{% endif %}>{{ r }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Region *</label>
+                            <select name="region" class="form-select" required>
+                                {% for r in regions %}
+                                <option value="{{ r }}" {% if member.region == r %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SE Location</label>
+                            <input type="text" name="location" class="form-control" value="{{ member.location or '' }}" placeholder="City, State...">
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -150,8 +200,38 @@
                             <input type="text" name="aligned_rep" class="form-control" value="{{ member.aligned_rep or '' }}" placeholder="Sales rep name...">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Secondary Aligned Rep</label>
+                            <label class="form-label">Primary Rep Location</label>
+                            <input type="text" name="aligned_rep_location" class="form-control" value="{{ member.aligned_rep_location or '' }}" placeholder="City, State...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Aligned Rep 2</label>
                             <input type="text" name="aligned_rep_2" class="form-control" value="{{ member.aligned_rep_2 or '' }}" placeholder="Sales rep name...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rep 2 Location</label>
+                            <input type="text" name="aligned_rep_2_location" class="form-control" value="{{ member.aligned_rep_2_location or '' }}" placeholder="City, State...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Aligned Rep 3</label>
+                            <input type="text" name="aligned_rep_3" class="form-control" value="{{ member.aligned_rep_3 or '' }}" placeholder="Sales rep name...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rep 3 Location</label>
+                            <input type="text" name="aligned_rep_3_location" class="form-control" value="{{ member.aligned_rep_3_location or '' }}" placeholder="City, State...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Aligned Rep 4</label>
+                            <input type="text" name="aligned_rep_4" class="form-control" value="{{ member.aligned_rep_4 or '' }}" placeholder="Sales rep name...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rep 4 Location</label>
+                            <input type="text" name="aligned_rep_4_location" class="form-control" value="{{ member.aligned_rep_4_location or '' }}" placeholder="City, State...">
                         </div>
                     </div>
                     <div class="mb-3">

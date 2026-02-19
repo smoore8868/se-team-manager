@@ -51,7 +51,7 @@
                 <div class="text-muted small">
                     {{ selected_member.role }}
                     {% if selected_member.region %}<span class="ms-2"><i class="bi bi-geo-alt"></i> {{ selected_member.region }}</span>{% endif %}
-                    {% if selected_member.aligned_rep %}<span class="ms-3"><i class="bi bi-people"></i> {{ selected_member.aligned_rep }}{% if selected_member.aligned_rep_2 %}, {{ selected_member.aligned_rep_2 }}{% endif %}</span>{% endif %}
+                    {% if selected_member.aligned_rep %}<span class="ms-3"><i class="bi bi-people"></i> {{ selected_member.aligned_rep }}{% if selected_member.aligned_rep_2 %}, {{ selected_member.aligned_rep_2 }}{% endif %}{% if selected_member.aligned_rep_3 %}, {{ selected_member.aligned_rep_3 }}{% endif %}{% if selected_member.aligned_rep_4 %}, {{ selected_member.aligned_rep_4 }}{% endif %}</span>{% endif %}
                 </div>
             </div>
             <div class="text-end">
