@@ -55,6 +55,7 @@
                         <th>Value</th>
                         <th>Primary SE</th>
                         <th>Sales Rep</th>
+                        <th>Products</th>
                         <th>POV</th>
                         <th>Close Date</th>
                         <th>Actions</th>
@@ -77,6 +78,7 @@
                         <td>${{ '{:,.0f}'.format(opp.value) }}</td>
                         <td>{{ opp.team_member.name }}</td>
                         <td>{{ opp.sales_rep or '-' }}</td>
+                        <td>{{ opp.products or '-' }}</td>
                         <td><span class="badge bg-{{ 'success' if opp.pov_status == 'Tech Win' else 'primary' if opp.pov_status == 'Active' else 'info' if opp.pov_status == 'Completed' else 'secondary' }}">{{ opp.pov_status or 'None' }}</span></td>
                         <td>{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</td>
                         <td>
@@ -96,7 +98,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="10" class="text-center text-muted">No opportunities found. Add one to get started!</td>
+                        <td colspan="11" class="text-center text-muted">No opportunities found. Add one to get started!</td>
                     </tr>
                     {% endfor %}
                 </tbody>
