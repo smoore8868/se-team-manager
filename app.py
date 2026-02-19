@@ -371,6 +371,9 @@ def add_support_case():
     db.session.add(case)
     db.session.commit()
     flash('Support case created successfully', 'success')
+    next_url = request.form.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for('support_cases'))
 
 
