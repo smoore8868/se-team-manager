@@ -655,7 +655,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('add_support_case') }}" method="post">
-                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="next" value="{{ url_for('one_on_ones', member_id=selected_member.id, tab='cases') }}">
                 <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
                     <h5 class="modal-title" style="color: #fff; font-weight: 600;">Create Support Case</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -1061,4 +1061,17 @@
 {% endfor %}
 
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var params = new URLSearchParams(window.location.search);
+    var tab = params.get('tab');
+    if (tab) {
+        var tabEl = document.getElementById('tab-' + tab);
+        if (tabEl) {
+            new bootstrap.Tab(tabEl).show();
+        }
+    }
+});
+</script>
 {% endblock %}
