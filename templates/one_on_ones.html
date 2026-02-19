@@ -771,41 +771,78 @@
 <!-- Edit Support Case Modals -->
 {% for case in open_cases %}
 <div class="modal fade" id="editCaseModal{{ case.id }}" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('edit_support_case', id=case.id) }}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Support Case</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                    <h5 class="modal-title" style="color: #fff; font-weight: 600;">Edit Support Case</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="team_member_id" value="{{ selected_member.id }}">
-                    <div class="mb-3">
-                        <label class="form-label">Title</label>
-                        <input type="text" name="title" class="form-control" value="{{ case.title }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Customer</label>
-                        <input type="text" name="customer" class="form-control" value="{{ case.customer or '' }}">
-                    </div>
+                    <h6 class="form-section-title">Case Details</h6>
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label class="form-label">Issue *</label>
+                            <input type="text" name="title" class="form-control" value="{{ case.title }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Case Number</label>
+                            <input type="text" name="case_number" class="form-control" value="{{ case.case_number or '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Issue Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ case.description or '' }}</textarea>
+                    </div>
+                    <h6 class="form-section-title">Status & Assignment</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
                             <select name="status" class="form-select">
                                 {% for s in case_statuses %}<option value="{{ s }}" {% if case.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Priority</label>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Severity</label>
                             <select name="priority" class="form-select">
                                 {% for p in priorities %}<option value="{{ p }}" {% if case.priority == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
                             </select>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Escalated</label>
+                            <select name="escalated" class="form-select">
+                                <option value="N" {% if case.escalated != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if case.escalated == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3">{{ case.description or '' }}</textarea>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Product</label>
+                            <select name="product" class="form-select">
+                                <option value="">Select Product...</option>
+                                {% for p in ['EPM', 'EPM-L', 'Password Safe', 'PRA', 'RS', 'AD Bridge', 'Insights', 'Entitle'] %}
+                                <option value="{{ p }}" {% if case.product == p %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <h6 class="form-section-title">Customer & Opportunity</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Customer</label>
+                            <input type="text" name="customer" class="form-control" value="{{ case.customer or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Customer Email</label>
+                            <input type="email" name="customer_email" class="form-control" value="{{ case.customer_email or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opportunity</label>
+                            <input type="text" name="opportunity" class="form-control" value="{{ case.opportunity or '' }}">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
