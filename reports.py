@@ -257,7 +257,7 @@ def generate_csv_report(data, start_date=None, end_date=None):
         # Team Members
         if data['team_members']:
             writer.writerow(['TEAM MEMBERS'])
-            writer.writerow(['Name', 'Email', 'Region', 'Location', 'Rep 1', 'Rep 1 Location', 'Rep 2', 'Rep 2 Location', 'Rep 3', 'Rep 3 Location', 'Rep 4', 'Rep 4 Location', 'Role', 'Created'])
+            writer.writerow(['Name', 'Email', 'Region', 'Location', 'Rep 1', 'Rep 1 Territory', 'Rep 2', 'Rep 2 Territory', 'Rep 3', 'Rep 3 Territory', 'Rep 4', 'Rep 4 Territory', 'Role', 'Created'])
             for member in data['team_members']:
                 writer.writerow([
                     member.name,
