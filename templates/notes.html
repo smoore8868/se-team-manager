@@ -46,47 +46,60 @@
     </div>
 </div>
 
-<div class="row">
-    {% for note in notes %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <strong>{{ note.title }}</strong>
-                <small class="text-muted">{{ note.created_at.strftime('%Y-%m-%d') }}</small>
-            </div>
-            <div class="card-body">
-                {% if note.tags %}
-                <div class="mb-2">
-                    {% for tag in note.tags.split(',') %}
-                    {% if tag.strip() %}
-                    <span class="badge bg-secondary me-1">{{ tag.strip() }}</span>
-                    {% endif %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Tags</th>
+                        <th>Team Member</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in notes %}
+                    <tr>
+                        <td>
+                            <strong>{{ note.title }}</strong>
+                            {% if note.content %}
+                            <div class="text-muted small mt-1" style="max-height:2em;overflow:hidden;">{{ note.content[:100] }}{% if note.content|length > 100 %}...{% endif %}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if note.tags %}
+                            {% for tag in note.tags.split(',') %}
+                            {% if tag.strip() %}
+                            <span class="badge bg-secondary me-1">{{ tag.strip() }}</span>
+                            {% endif %}
+                            {% endfor %}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ note.team_member.name if note.team_member else '-' }}</td>
+                        <td>{{ note.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewNoteModal{{ note.id }}">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editNoteModal{{ note.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteNoteModal{{ note.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No notes found. Add one to get started!</td>
+                    </tr>
                     {% endfor %}
-                </div>
-                {% endif %}
-                {% if note.team_member %}
-                <p class="text-muted mb-2"><small><i class="bi bi-person"></i> {{ note.team_member.name }}</small></p>
-                {% endif %}
-                <p class="card-text">{{ note.content[:200] }}{% if note.content|length > 200 %}...{% endif %}</p>
-            </div>
-            <div class="card-footer">
-                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewNoteModal{{ note.id }}">
-                    <i class="bi bi-eye"></i> View
-                </button>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editNoteModal{{ note.id }}">
-                    <i class="bi bi-pencil"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteNoteModal{{ note.id }}">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
+                </tbody>
+            </table>
         </div>
     </div>
-    {% else %}
-    <div class="col-12">
-        <div class="alert alert-info">No notes found. Add one to get started!</div>
-    </div>
-    {% endfor %}
 </div>
 
 <!-- Add Note Modal -->
