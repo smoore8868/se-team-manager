@@ -361,7 +361,12 @@ def add_support_case():
         status=request.form.get('status', 'Open'),
         priority=request.form.get('priority', 'Medium'),
         team_member_id=request.form['team_member_id'],
-        customer=request.form.get('customer', '')
+        customer=request.form.get('customer', ''),
+        case_number=request.form.get('case_number', ''),
+        escalated=request.form.get('escalated', 'N'),
+        opportunity=request.form.get('opportunity', ''),
+        product=request.form.get('product', ''),
+        customer_email=request.form.get('customer_email', '')
     )
     db.session.add(case)
     db.session.commit()
@@ -380,6 +385,11 @@ def edit_support_case(id):
     case.priority = request.form.get('priority', case.priority)
     case.team_member_id = request.form['team_member_id']
     case.customer = request.form.get('customer', '')
+    case.case_number = request.form.get('case_number', '')
+    case.escalated = request.form.get('escalated', 'N')
+    case.opportunity = request.form.get('opportunity', '')
+    case.product = request.form.get('product', '')
+    case.customer_email = request.form.get('customer_email', '')
 
     if case.status in ['Resolved', 'Closed'] and old_status not in ['Resolved', 'Closed']:
         case.resolved_at = datetime.utcnow()
@@ -792,6 +802,20 @@ def migrate_db():
             db.text("UPDATE opportunities SET pov_status = 'None' WHERE pov_status IS NULL")
         )
 
+    db.session.commit()
+
+    # Migrate support_cases table
+    sc_cols = {col['name'] for col in inspector.get_columns('support_cases')}
+    sc_new_cols = {
+        'case_number': 'VARCHAR(50)',
+        'escalated': 'VARCHAR(1)',
+        'opportunity': 'VARCHAR(200)',
+        'product': 'VARCHAR(100)',
+        'customer_email': 'VARCHAR(200)',
+    }
+    for col_name, col_type in sc_new_cols.items():
+        if col_name not in sc_cols:
+            db.session.execute(db.text(f'ALTER TABLE support_cases ADD COLUMN {col_name} {col_type}'))
     db.session.commit()
 
 

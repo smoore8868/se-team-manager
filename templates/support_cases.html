@@ -121,19 +121,27 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('add_support_case') }}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Support Case</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                    <h5 class="modal-title" style="color: #fff; font-weight: 600;">Create Support Case</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Title *</label>
-                        <input type="text" name="title" class="form-control" required>
+                    <h6 class="form-section-title">Case Details</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Issue *</label>
+                            <input type="text" name="title" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Case Number</label>
+                            <input type="text" name="case_number" class="form-control">
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">Issue Description</label>
                         <textarea name="description" class="form-control" rows="3"></textarea>
                     </div>
+                    <h6 class="form-section-title">Status & Assignment</h6>
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
@@ -144,7 +152,7 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Priority</label>
+                            <label class="form-label">Severity</label>
                             <select name="priority" class="form-select">
                                 {% for p in priorities %}
                                 <option value="{{ p }}" {% if p == 'Medium' %}selected{% endif %}>{{ p }}</option>
@@ -152,18 +160,47 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
+                            <label class="form-label">Escalated</label>
+                            <select name="escalated" class="form-select">
+                                <option value="N">No</option>
+                                <option value="Y">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SE *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                <option value="">Select SE...</option>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}">{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Product</label>
+                            <select name="product" class="form-select">
+                                <option value="">Select Product...</option>
+                                {% for p in ['EPM', 'EPM-L', 'Password Safe', 'PRA', 'RS', 'AD Bridge', 'Insights', 'Entitle'] %}
+                                <option value="{{ p }}">{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <h6 class="form-section-title">Customer & Opportunity</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Customer</label>
                             <input type="text" name="customer" class="form-control">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">SE Team Member *</label>
-                        <select name="team_member_id" class="form-select" required>
-                            <option value="">Select SE...</option>
-                            {% for member in team_members %}
-                            <option value="{{ member.id }}">{{ member.name }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Customer Email</label>
+                            <input type="email" name="customer_email" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opportunity</label>
+                            <input type="text" name="opportunity" class="form-control">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -181,29 +218,43 @@
 <div class="modal fade" id="viewCaseModal{{ case.id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">{{ case.title }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                <h5 class="modal-title" style="color: #fff; font-weight: 600;">{{ case.title }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <h6 class="form-section-title">Case Details</h6>
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <p><strong>Customer:</strong> {{ case.customer or '-' }}</p>
+                        <p><strong>Issue:</strong> {{ case.title }}</p>
+                        <p><strong>Case Number:</strong> {{ case.case_number or '-' }}</p>
                         <p><strong>Status:</strong> <span class="badge bg-{{ 'success' if case.status in ['Resolved', 'Closed'] else 'warning' if case.status == 'Pending' else 'info' if case.status == 'In Progress' else 'secondary' }}">{{ case.status }}</span></p>
-                        <p><strong>Priority:</strong> <span class="badge bg-{{ 'danger' if case.priority == 'High' else 'warning' if case.priority == 'Medium' else 'secondary' }}">{{ case.priority }}</span></p>
+                        <p><strong>Severity:</strong> <span class="badge bg-{{ 'danger' if case.priority == 'High' else 'warning' if case.priority == 'Medium' else 'secondary' }}">{{ case.priority }}</span></p>
+                        <p><strong>Escalated:</strong> {{ 'Yes' if case.escalated == 'Y' else 'No' }}</p>
                     </div>
                     <div class="col-md-6">
                         <p><strong>SE:</strong> {{ case.team_member.name }}</p>
+                        <p><strong>Product:</strong> {{ case.product or '-' }}</p>
                         <p><strong>Created:</strong> {{ case.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                         <p><strong>Resolved:</strong> {{ case.resolved_at.strftime('%Y-%m-%d %H:%M') if case.resolved_at else '-' }}</p>
                     </div>
                 </div>
+                <h6 class="form-section-title">Customer & Opportunity</h6>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>Customer:</strong> {{ case.customer or '-' }}</p>
+                        <p><strong>Customer Email:</strong> {{ case.customer_email or '-' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Opportunity:</strong> {{ case.opportunity or '-' }}</p>
+                    </div>
+                </div>
                 {% if case.description %}
-                <h6>Description</h6>
+                <h6 class="form-section-title">Issue Description</h6>
                 <p>{{ case.description }}</p>
                 {% endif %}
                 {% if case.comments %}
-                <h6>Comments</h6>
+                <h6 class="form-section-title">Comments</h6>
                 {% for comment in case.comments|sort(attribute='created_at', reverse=True) %}
                 <div class="card mb-2">
                     <div class="card-body py-2">
@@ -226,19 +277,27 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('edit_support_case', id=case.id) }}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Support Case</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                    <h5 class="modal-title" style="color: #fff; font-weight: 600;">Edit Support Case</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Title *</label>
-                        <input type="text" name="title" class="form-control" value="{{ case.title }}" required>
+                    <h6 class="form-section-title">Case Details</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Issue *</label>
+                            <input type="text" name="title" class="form-control" value="{{ case.title }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Case Number</label>
+                            <input type="text" name="case_number" class="form-control" value="{{ case.case_number or '' }}">
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">Issue Description</label>
                         <textarea name="description" class="form-control" rows="3">{{ case.description or '' }}</textarea>
                     </div>
+                    <h6 class="form-section-title">Status & Assignment</h6>
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
@@ -249,7 +308,7 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Priority</label>
+                            <label class="form-label">Severity</label>
                             <select name="priority" class="form-select">
                                 {% for p in priorities %}
                                 <option value="{{ p }}" {% if case.priority == p %}selected{% endif %}>{{ p }}</option>
@@ -257,17 +316,46 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
+                            <label class="form-label">Escalated</label>
+                            <select name="escalated" class="form-select">
+                                <option value="N" {% if case.escalated != 'Y' %}selected{% endif %}>No</option>
+                                <option value="Y" {% if case.escalated == 'Y' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SE *</label>
+                            <select name="team_member_id" class="form-select" required>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}" {% if case.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Product</label>
+                            <select name="product" class="form-select">
+                                <option value="">Select Product...</option>
+                                {% for p in ['EPM', 'EPM-L', 'Password Safe', 'PRA', 'RS', 'AD Bridge', 'Insights', 'Entitle'] %}
+                                <option value="{{ p }}" {% if case.product == p %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <h6 class="form-section-title">Customer & Opportunity</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Customer</label>
                             <input type="text" name="customer" class="form-control" value="{{ case.customer or '' }}">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">SE Team Member *</label>
-                        <select name="team_member_id" class="form-select" required>
-                            {% for member in team_members %}
-                            <option value="{{ member.id }}" {% if case.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Customer Email</label>
+                            <input type="email" name="customer_email" class="form-control" value="{{ case.customer_email or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Opportunity</label>
+                            <input type="text" name="opportunity" class="form-control" value="{{ case.opportunity or '' }}">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

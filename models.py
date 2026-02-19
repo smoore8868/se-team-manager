@@ -82,6 +82,11 @@ class SupportCase(db.Model):
     priority = db.Column(db.String(20), nullable=False, default='Medium')
     team_member_id = db.Column(db.Integer, db.ForeignKey('team_members.id'), nullable=False)
     customer = db.Column(db.String(200))
+    case_number = db.Column(db.String(50))
+    escalated = db.Column(db.String(1), default='N')
+    opportunity = db.Column(db.String(200))
+    product = db.Column(db.String(100))
+    customer_email = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     resolved_at = db.Column(db.DateTime)
 
