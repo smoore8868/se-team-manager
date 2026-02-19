@@ -215,17 +215,20 @@ def delete_one_on_one(id):
 def opportunities():
     stage = request.args.get('stage')
     member_id = request.args.get('member_id', type=int)
+    product = request.args.get('product')
 
     query = Opportunity.query
     if stage:
         query = query.filter(Opportunity.stage == stage)
     if member_id:
         query = query.filter(Opportunity.team_member_id == member_id)
+    if product:
+        query = query.filter(Opportunity.products.contains(product))
 
     opps = query.order_by(Opportunity.updated_at.desc()).all()
     team_members = TeamMember.query.order_by(TeamMember.name).all()
     return render_template('opportunities.html', opportunities=opps, team_members=team_members,
-                           selected_stage=stage, selected_member=member_id)
+                           selected_stage=stage, selected_member=member_id, selected_product=product)
 
 
 @app.route('/opportunities/add', methods=['POST'])
