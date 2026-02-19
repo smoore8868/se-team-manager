@@ -342,35 +342,35 @@ body {
 .proficiency-havent-started,
 select.proficiency-havent-started {
     background-color: #e9ecef;
-    color: #6c757d;
+    color: #000;
     border-color: #ced4da;
 }
 
 .proficiency-training,
 select.proficiency-training {
     background-color: #d1ecf1;
-    color: #0c5460;
+    color: #000;
     border-color: #bee5eb;
 }
 
 .proficiency-demo-ready,
 select.proficiency-demo-ready {
     background-color: #fff3cd;
-    color: #856404;
+    color: #000;
     border-color: #ffeeba;
 }
 
 .proficiency-pov-ready,
 select.proficiency-pov-ready {
     background-color: #ffe0b2;
-    color: #e65100;
+    color: #000;
     border-color: #ffcc80;
 }
 
 .proficiency-expert,
 select.proficiency-expert {
     background-color: #d4edda;
-    color: #155724;
+    color: #000;
     border-color: #c3e6cb;
 }
 
