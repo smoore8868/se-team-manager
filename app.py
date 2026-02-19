@@ -216,6 +216,7 @@ def opportunities():
     stage = request.args.get('stage')
     member_id = request.args.get('member_id', type=int)
     product = request.args.get('product')
+    pov_status = request.args.get('pov_status')
 
     query = Opportunity.query
     if stage:
@@ -224,11 +225,14 @@ def opportunities():
         query = query.filter(Opportunity.team_member_id == member_id)
     if product:
         query = query.filter(Opportunity.products.contains(product))
+    if pov_status:
+        query = query.filter(Opportunity.pov_status == pov_status)
 
     opps = query.order_by(Opportunity.updated_at.desc()).all()
     team_members = TeamMember.query.order_by(TeamMember.name).all()
     return render_template('opportunities.html', opportunities=opps, team_members=team_members,
-                           selected_stage=stage, selected_member=member_id, selected_product=product)
+                           selected_stage=stage, selected_member=member_id, selected_product=product,
+                           selected_pov_status=pov_status)
 
 
 @app.route('/opportunities/add', methods=['POST'])

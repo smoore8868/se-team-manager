@@ -43,6 +43,15 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-md-3">
+                <label class="form-label">POV Status</label>
+                <select name="pov_status" class="form-select">
+                    <option value="">All POV Statuses</option>
+                    {% for ps in pov_statuses %}
+                    <option value="{{ ps }}" {% if selected_pov_status == ps %}selected{% endif %}>{{ ps }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-secondary me-2">Filter</button>
                 <a href="{{ url_for('opportunities') }}" class="btn btn-outline-secondary">Clear</a>
