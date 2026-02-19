@@ -166,9 +166,14 @@ body {
     font-size: 1rem;
 }
 
-/* Larger form labels inside edit modals */
+/* Tighter spacing inside modals */
 .modal .form-label {
     font-size: 1rem;
+    margin-bottom: 0.15rem;
+}
+
+.modal .mb-3 {
+    margin-bottom: 0.6rem !important;
 }
 
 .btn-outline-primary:hover,
@@ -218,8 +223,9 @@ body {
     color: #fff;
     background-color: #1a2332;
     border-left: 4px solid #f15822;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 1rem;
+    padding: 0.4rem 0.75rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.6rem;
     border-radius: 0 0.25rem 0.25rem 0;
 }
 
