@@ -307,28 +307,28 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ url_for('edit_opportunity', id=opp.id) }}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Opportunity</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                    <h5 class="modal-title" style="color: #fff; font-weight: 600;">Edit Opportunity</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body py-2">
                     <h6 class="form-section-title">Opportunity Details</h6>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-2">
                             <label class="form-label">Account *</label>
-                            <input type="text" name="account" class="form-control" value="{{ opp.account }}" required>
+                            <input type="text" name="account" class="form-control form-control-sm" value="{{ opp.account }}" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-2">
                             <label class="form-label">Opportunity *</label>
-                            <input type="text" name="name" class="form-control" value="{{ opp.name }}" required>
+                            <input type="text" name="name" class="form-control form-control-sm" value="{{ opp.name }}" required>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Salesforce Link</label>
+                            <input type="url" name="salesforce_link" class="form-control form-control-sm" value="{{ opp.salesforce_link or '' }}" placeholder="https://...">
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Salesforce Link</label>
-                        <input type="url" name="salesforce_link" class="form-control" value="{{ opp.salesforce_link or '' }}" placeholder="https://...">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Products</label>
+                    <div class="mb-2">
+                        <label class="form-label mb-1">Products</label>
                         <div class="d-flex flex-wrap gap-3">
                             {% for p in products_list %}
                             <div class="form-check">
@@ -340,73 +340,70 @@
                     </div>
                     <h6 class="form-section-title">Team & Value</h6>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-4 mb-2">
                             <label class="form-label">Sales Rep</label>
-                            <input type="text" name="sales_rep" class="form-control" value="{{ opp.sales_rep or '' }}">
+                            <input type="text" name="sales_rep" class="form-control form-control-sm" value="{{ opp.sales_rep or '' }}">
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-4 mb-2">
                             <label class="form-label">Primary SE *</label>
-                            <select name="team_member_id" class="form-select" required>
+                            <select name="team_member_id" class="form-select form-select-sm" required>
                                 {% for member in team_members %}<option value="{{ member.id }}" {% if opp.team_member_id == member.id %}selected{% endif %}>{{ member.name }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-4 mb-2">
                             <label class="form-label">Opp Value ($)</label>
-                            <input type="number" name="value" class="form-control" step="0.01" value="{{ opp.value }}">
+                            <input type="number" name="value" class="form-control form-control-sm" step="0.01" value="{{ opp.value }}">
                         </div>
                     </div>
-                    <h6 class="form-section-title">Pipeline</h6>
+                    <h6 class="form-section-title">Pipeline & Activities</h6>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Stage (1-6)</label>
-                            <select name="stage" class="form-select">
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Stage</label>
+                            <select name="stage" class="form-select form-select-sm">
                                 {% for s in opportunity_stages %}<option value="{{ s }}" {% if opp.stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Expected Close Date</label>
-                            <input type="date" name="close_date" class="form-control" value="{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '' }}">
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Close Date</label>
+                            <input type="date" name="close_date" class="form-control form-control-sm" value="{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '' }}">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Confidence (1-10)</label>
-                            <select name="confidence" class="form-select">
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Confidence</label>
+                            <select name="confidence" class="form-select form-select-sm">
                                 <option value="">-</option>
                                 {% for c in range(1, 11) %}<option value="{{ c }}" {% if opp.confidence == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
                             </select>
                         </div>
-                    </div>
-                    <h6 class="form-section-title">Activities</h6>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-2">
                             <label class="form-label">RFP</label>
-                            <select name="rfp" class="form-select">
+                            <select name="rfp" class="form-select form-select-sm">
                                 <option value="N" {% if opp.rfp != 'Y' %}selected{% endif %}>No</option>
                                 <option value="Y" {% if opp.rfp == 'Y' %}selected{% endif %}>Yes</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-2">
                             <label class="form-label">Demo</label>
-                            <select name="demo" class="form-select">
+                            <select name="demo" class="form-select form-select-sm">
                                 <option value="N" {% if opp.demo != 'Y' %}selected{% endif %}>No</option>
                                 <option value="Y" {% if opp.demo == 'Y' %}selected{% endif %}>Yes</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-1 mb-2">
                             <label class="form-label">POV</label>
-                            <select name="pov_status" class="form-select">
+                            <select name="pov_status" class="form-select form-select-sm">
                                 {% for ps in pov_statuses %}<option value="{{ ps }}" {% if opp.pov_status == ps %}selected{% endif %}>{{ ps }}</option>{% endfor %}
                             </select>
                         </div>
                     </div>
                     <h6 class="form-section-title">Latest Update</h6>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-4 mb-2">
                             <label class="form-label">Date</label>
-                            <input type="date" name="latest_update_date" class="form-control" value="{{ opp.latest_update_date.strftime('%Y-%m-%d') if opp.latest_update_date else '' }}">
+                            <input type="date" name="latest_update_date" class="form-control form-control-sm" value="{{ opp.latest_update_date.strftime('%Y-%m-%d') if opp.latest_update_date else '' }}">
                         </div>
-                        <div class="col-md-8 mb-3">
+                        <div class="col-md-8 mb-2">
                             <label class="form-label">Notes</label>
-                            <textarea name="latest_update_notes" class="form-control" rows="2">{{ opp.latest_update_notes or '' }}</textarea>
+                            <textarea name="latest_update_notes" class="form-control form-control-sm" rows="2">{{ opp.latest_update_notes or '' }}</textarea>
                         </div>
                     </div>
                 </div>
