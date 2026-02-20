@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, Response
 from models import db, TeamMember, OneOnOne, Opportunity, OpportunityUpdate, SupportCase, SupportCaseComment, FollowUp, Note, SkillRating
 from datetime import datetime, date
 from dateutil.parser import parse as parse_date
 import os
+import csv
+import io
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'se-team-manager-secret-key'
@@ -20,6 +22,20 @@ MOODS = ['Excellent', 'Good', 'Neutral', 'Concerned', 'Needs Attention']
 SKILLS = ['Password Safe', 'EPM Win-Mac', 'EPM-L', 'Remote Support', 'PRA', 'AD Bridge', 'Insights', 'Entitle']
 PROFICIENCY_LEVELS = ["Haven't Started", 'Training', 'Demo Ready', 'POV Ready', 'Expert']
 PRODUCTS = ['EPM', 'EPM-L', 'PWS', 'RS', 'PRA', 'ADB', 'Insights', 'Entitle']
+MEMBER_CATEGORIES = ['Solution Engineers', 'SE Leaders', 'Sales Leaders', 'Sales Reps']
+PRODUCT_ALIASES = {
+    'ppm': 'PWS',
+    'password safe': 'PWS',
+    'workforce passwords': 'PWS',
+    'password safe with pra': 'PWS,PRA',
+    'isi': 'Insights',
+    'identity security insights': 'Insights',
+    'upem': 'EPM-L',
+    'pm for ul servers': 'EPM-L',
+    'pm desktops': 'EPM',
+    'pm for win servers': 'EPM',
+    'remote support': 'RS',
+}
 POV_STATUSES = ['None', 'Active', 'Completed', 'Tech Win']
 
 
@@ -36,6 +52,7 @@ def inject_globals():
         'proficiency_levels': PROFICIENCY_LEVELS,
         'products_list': PRODUCTS,
         'pov_statuses': POV_STATUSES,
+        'member_categories': MEMBER_CATEGORIES,
     }
 
 
@@ -90,7 +107,9 @@ def add_team_member():
         aligned_rep_2_location=request.form.get('aligned_rep_2_location', ''),
         aligned_rep_3_location=request.form.get('aligned_rep_3_location', ''),
         aligned_rep_4_location=request.form.get('aligned_rep_4_location', ''),
-        role=request.form.get('role', 'Senior Solutions Engineer')
+        role=request.form.get('role', 'Senior Solutions Engineer'),
+        category=request.form.get('category', 'Solution Engineers'),
+        show_in_one_on_ones='Y' if request.form.get('show_in_one_on_ones') else 'N'
     )
     db.session.add(member)
     db.session.commit()
@@ -114,6 +133,8 @@ def edit_team_member(id):
     member.aligned_rep_3_location = request.form.get('aligned_rep_3_location', '')
     member.aligned_rep_4_location = request.form.get('aligned_rep_4_location', '')
     member.role = request.form.get('role', 'Senior Solutions Engineer')
+    member.category = request.form.get('category', 'Solution Engineers')
+    member.show_in_one_on_ones = 'Y' if request.form.get('show_in_one_on_ones') else 'N'
     db.session.commit()
     flash('Team member updated successfully', 'success')
     return redirect(url_for('team_members'))
@@ -132,7 +153,9 @@ def delete_team_member(id):
 @app.route('/one-on-ones')
 def one_on_ones():
     member_id = request.args.get('member_id', type=int)
-    team_members_list = TeamMember.query.order_by(TeamMember.name).all()
+    team_members_list = TeamMember.query.filter(
+        db.or_(TeamMember.show_in_one_on_ones == 'Y', TeamMember.show_in_one_on_ones.is_(None))
+    ).order_by(TeamMember.name).all()
 
     selected_member = None
     meetings = []
@@ -243,7 +266,9 @@ def opportunities():
         query = query.filter(Opportunity.pov_status == pov_status)
 
     opps = query.order_by(Opportunity.updated_at.desc()).all()
-    team_members = TeamMember.query.order_by(TeamMember.name).all()
+    team_members = TeamMember.query.filter(
+        db.or_(TeamMember.category == 'Solution Engineers', TeamMember.category.is_(None))
+    ).order_by(TeamMember.name).all()
     return render_template('opportunities.html', opportunities=opps, team_members=team_members,
                            selected_stage=stage, selected_member=member_id, selected_product=product,
                            selected_pov_status=pov_status)
@@ -255,7 +280,7 @@ def add_opportunity():
         name=request.form['name'],
         account=request.form['account'],
         stage=request.form.get('stage', '1'),
-        value=float(request.form.get('value', 0) or 0),
+        value=float((request.form.get('value', '0') or '0').replace('$', '').replace(',', '') or 0),
         team_member_id=request.form['team_member_id'],
         close_date=parse_date(request.form['close_date']).date() if request.form.get('close_date') else None,
         salesforce_link=request.form.get('salesforce_link', ''),
@@ -265,6 +290,8 @@ def add_opportunity():
         rfp=request.form.get('rfp', 'N'),
         demo=request.form.get('demo', 'N'),
         pov_status=request.form.get('pov_status', 'None'),
+        competitive='Y' if request.form.get('competitive') else 'N',
+        competitive_notes=request.form.get('competitive_notes', ''),
         latest_update_date=parse_date(request.form['latest_update_date']).date() if request.form.get('latest_update_date') else None,
         latest_update_notes=request.form.get('latest_update_notes', ''),
     )
@@ -294,7 +321,8 @@ def edit_opportunity(id):
     opp.name = request.form['name']
     opp.account = request.form['account']
     opp.stage = request.form.get('stage', opp.stage)
-    opp.value = float(request.form.get('value', 0) or 0)
+    raw_value = (request.form.get('value', '0') or '0').replace('$', '').replace(',', '')
+    opp.value = float(raw_value or 0)
     opp.team_member_id = request.form['team_member_id']
     opp.close_date = parse_date(request.form['close_date']).date() if request.form.get('close_date') else None
     opp.salesforce_link = request.form.get('salesforce_link', '')
@@ -304,6 +332,8 @@ def edit_opportunity(id):
     opp.rfp = request.form.get('rfp', 'N')
     opp.demo = request.form.get('demo', 'N')
     opp.pov_status = request.form.get('pov_status', 'None')
+    opp.competitive = 'Y' if request.form.get('competitive') else 'N'
+    opp.competitive_notes = request.form.get('competitive_notes', '')
     opp.latest_update_date = parse_date(request.form['latest_update_date']).date() if request.form.get('latest_update_date') else None
     opp.latest_update_notes = request.form.get('latest_update_notes', '')
 
@@ -343,6 +373,149 @@ def delete_opportunity(id):
     db.session.delete(opp)
     db.session.commit()
     flash('Opportunity deleted successfully', 'success')
+    return redirect(url_for('opportunities'))
+
+
+@app.route('/opportunities/import-template')
+def import_template():
+    headers = ['name', 'account', 'se_name', 'stage', 'value', 'close_date',
+               'salesforce_link', 'confidence', 'sales_rep', 'products',
+               'rfp', 'demo', 'pov_status']
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
+    csv_content = output.getvalue()
+    return Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=opportunities_template.csv'}
+    )
+
+
+@app.route('/opportunities/import', methods=['POST'])
+def import_opportunities():
+    file = request.files.get('csv_file')
+    if not file or not file.filename.endswith('.csv'):
+        flash('Please upload a valid CSV file.', 'danger')
+        return redirect(url_for('opportunities'))
+
+    # Build case-insensitive name lookup for team members
+    members = TeamMember.query.all()
+    member_lookup = {m.name.strip().lower(): m.id for m in members}
+
+    try:
+        stream = io.StringIO(file.stream.read().decode('utf-8-sig'))
+        reader = csv.DictReader(stream)
+    except Exception as e:
+        flash(f'Error reading CSV file: {e}', 'danger')
+        return redirect(url_for('opportunities'))
+
+    success_count = 0
+    errors = []
+
+    for i, row in enumerate(reader, start=2):  # row 2 = first data row after header
+        name = (row.get('name') or '').strip()
+        account = (row.get('account') or '').strip()
+        se_name = (row.get('se_name') or '').strip()
+
+        # Validate required fields
+        missing = []
+        if not name:
+            missing.append('name')
+        if not account:
+            missing.append('account')
+        if not se_name:
+            missing.append('se_name')
+        if missing:
+            errors.append(f"Row {i}: missing required field(s): {', '.join(missing)}")
+            continue
+
+        # Resolve SE name
+        team_member_id = member_lookup.get(se_name.lower())
+        if not team_member_id:
+            errors.append(f"Row {i}: SE name '{se_name}' not found")
+            continue
+
+        # Parse optional fields with defaults
+        stage = (row.get('stage') or '1').strip()
+        if stage not in OPPORTUNITY_STAGES:
+            stage = '1'
+
+        try:
+            raw_value = (row.get('value') or '0').strip()
+            raw_value = raw_value.replace('$', '').replace(',', '')
+            value = float(raw_value or 0)
+        except ValueError:
+            value = 0
+
+        close_date = None
+        if row.get('close_date', '').strip():
+            try:
+                close_date = parse_date(row['close_date'].strip()).date()
+            except (ValueError, TypeError):
+                errors.append(f"Row {i}: invalid close_date '{row['close_date']}'")
+                continue
+
+        confidence = None
+        if row.get('confidence', '').strip():
+            try:
+                confidence = int(row['confidence'].strip())
+                if confidence < 1 or confidence > 10:
+                    confidence = None
+            except ValueError:
+                pass
+
+        rfp = (row.get('rfp') or 'N').strip().upper()
+        if rfp not in ('Y', 'N'):
+            rfp = 'N'
+
+        demo = (row.get('demo') or 'N').strip().upper()
+        if demo not in ('Y', 'N'):
+            demo = 'N'
+
+        pov_status = (row.get('pov_status') or 'None').strip()
+        if pov_status not in POV_STATUSES:
+            pov_status = 'None'
+
+        opp = Opportunity(
+            name=name,
+            account=account,
+            team_member_id=team_member_id,
+            stage=stage,
+            value=value,
+            close_date=close_date,
+            salesforce_link=(row.get('salesforce_link') or '').strip(),
+            confidence=confidence,
+            sales_rep=(row.get('sales_rep') or '').strip(),
+            products=','.join(dict.fromkeys(
+                prod
+                for p in (row.get('products') or '').split(',') if p.strip()
+                for prod in PRODUCT_ALIASES.get(p.strip().lower(), p.strip()).split(',')
+            )),
+            rfp=rfp,
+            demo=demo,
+            pov_status=pov_status,
+        )
+        db.session.add(opp)
+        db.session.flush()  # get opp.id
+
+        update = OpportunityUpdate(
+            opportunity_id=opp.id,
+            stage_to=opp.stage,
+            comment='Imported from CSV'
+        )
+        db.session.add(update)
+        success_count += 1
+
+    db.session.commit()
+
+    if success_count:
+        flash(f'Successfully imported {success_count} opportunity(ies).', 'success')
+    if errors:
+        flash(f'Import errors ({len(errors)}): ' + '; '.join(errors[:10]), 'danger')
+    if not success_count and not errors:
+        flash('CSV file was empty or had no data rows.', 'warning')
+
     return redirect(url_for('opportunities'))
 
 
@@ -608,7 +781,9 @@ def skill_matrix():
         if val:
             skill_filters[s] = val
 
-    query = TeamMember.query
+    query = TeamMember.query.filter(
+        db.or_(TeamMember.category == 'Solution Engineers', TeamMember.category.is_(None))
+    )
     if region:
         query = query.filter(TeamMember.region == region)
 
@@ -798,6 +973,8 @@ def migrate_db():
         'pov_status': 'VARCHAR(20)',
         'latest_update_date': 'DATE',
         'latest_update_notes': 'TEXT',
+        'competitive': 'VARCHAR(1)',
+        'competitive_notes': 'TEXT',
     }
     for col_name, col_type in new_cols.items():
         if col_name not in existing_cols:
@@ -845,6 +1022,8 @@ def migrate_db():
         'aligned_rep_2_location': 'VARCHAR(100)',
         'aligned_rep_3_location': 'VARCHAR(100)',
         'aligned_rep_4_location': 'VARCHAR(100)',
+        'category': "VARCHAR(50) DEFAULT 'Solution Engineers'",
+        'show_in_one_on_ones': "VARCHAR(1) DEFAULT 'Y'",
     }
     for col_name, col_type in tm_new_cols.items():
         if col_name not in tm_cols:

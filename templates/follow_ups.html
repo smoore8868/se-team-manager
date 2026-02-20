@@ -3,6 +3,12 @@
 {% block title %}Follow-ups - SE Team Manager{% endblock %}
 
 {% block content %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+.ql-editor { font-size: 14px; }
+.ql-toolbar { border-radius: 4px 4px 0 0; }
+.ql-container { border-radius: 0 0 4px 4px; }
+</style>
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h2><i class="bi bi-check2-square"></i> Follow-ups</h2>
@@ -139,7 +145,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3"></textarea>
+                        <div id="add-fu-editor" style="height: 120px;"></div>
+                        <input type="hidden" name="description" id="add-fu-hidden">
                     </div>
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -190,7 +197,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Follow-up</button>
+                    <button type="submit" class="btn btn-primary" onclick="document.getElementById('add-fu-hidden').value = addFuQuill.root.innerHTML;">Create Follow-up</button>
                 </div>
             </form>
         </div>
@@ -215,7 +222,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3">{{ item.description or '' }}</textarea>
+                        <div id="edit-fu-editor-{{ item.id }}" class="edit-fu-editor" style="height: 120px;"></div>
+                        <input type="hidden" name="description" id="edit-fu-hidden-{{ item.id }}" value="{{ item.description or '' }}">
                     </div>
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -266,7 +274,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary" onclick="var el=document.getElementById('edit-fu-hidden-{{ item.id }}'); el.value=editFuQuills['{{ item.id }}'].root.innerHTML;">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -294,4 +302,28 @@
     </div>
 </div>
 {% endfor %}
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var toolbarOptions = [
+        [{ 'size': ['small', false, 'large'] }],
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['clean']
+    ];
+    var addEl = document.getElementById('add-fu-editor');
+    if (addEl) {
+        window.addFuQuill = new Quill('#add-fu-editor', { theme: 'snow', modules: { toolbar: toolbarOptions } });
+    }
+    window.editFuQuills = {};
+    document.querySelectorAll('.edit-fu-editor').forEach(function(el) {
+        var id = el.id.replace('edit-fu-editor-', '');
+        var quill = new Quill('#' + el.id, { theme: 'snow', modules: { toolbar: toolbarOptions } });
+        var hidden = document.getElementById('edit-fu-hidden-' + id);
+        if (hidden && hidden.value) { quill.root.innerHTML = hidden.value; }
+        window.editFuQuills[id] = quill;
+    });
+});
+</script>
 {% endblock %}

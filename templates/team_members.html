@@ -12,7 +12,13 @@
     </div>
 </div>
 
-<div class="card">
+{% for cat in member_categories %}
+{% set cat_members = members|selectattr('category', 'equalto', cat)|list %}
+{% if cat_members %}
+<div class="card mb-4">
+    <div class="card-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+        <h5 class="mb-0" style="color: #fff; font-weight: 600;">{{ cat }}</h5>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover">
@@ -24,12 +30,12 @@
                         <th>Location</th>
                         <th>Aligned Reps</th>
                         <th>Role</th>
-                        <th>Created</th>
+                        <th>1-1s</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for member in members %}
+                    {% for member in cat_members %}
                     <tr>
                         <td><strong>{{ member.name }}</strong></td>
                         <td>{{ member.email }}</td>
@@ -52,7 +58,7 @@
                             {% endif %}
                         </td>
                         <td>{{ member.role }}</td>
-                        <td>{{ member.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{% if member.show_in_one_on_ones == 'Y' %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMemberModal{{ member.id }}">
                                 <i class="bi bi-pencil"></i>
@@ -62,9 +68,55 @@
                             </button>
                         </td>
                     </tr>
-                    {% else %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Uncategorized members -->
+{% set uncat_members = members|rejectattr('category', 'in', member_categories)|list %}
+{% if uncat_members %}
+<div class="card mb-4">
+    <div class="card-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+        <h5 class="mb-0" style="color: #fff; font-weight: 600;">Other</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No team members found. Add one to get started!</td>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Region</th>
+                        <th>Location</th>
+                        <th>Aligned Reps</th>
+                        <th>Role</th>
+                        <th>1-1s</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in uncat_members %}
+                    <tr>
+                        <td><strong>{{ member.name }}</strong></td>
+                        <td>{{ member.email }}</td>
+                        <td><span class="badge bg-secondary">{{ member.region }}</span></td>
+                        <td>{{ member.location or '-' }}</td>
+                        <td>-</td>
+                        <td>{{ member.role }}</td>
+                        <td>{% if member.show_in_one_on_ones == 'Y' %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMemberModal{{ member.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteMemberModal{{ member.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -72,6 +124,15 @@
         </div>
     </div>
 </div>
+{% endif %}
+
+{% if not members %}
+<div class="card">
+    <div class="card-body">
+        <p class="text-center text-muted">No team members found. Add one to get started!</p>
+    </div>
+</div>
+{% endif %}
 
 <!-- Add Member Modal -->
 <div class="modal fade" id="addMemberModal" tabindex="-1">
@@ -145,9 +206,25 @@
                             <input type="text" name="aligned_rep_4_location" class="form-control" placeholder="City, State...">
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category *</label>
+                            <select name="category" class="form-select" required>
+                                {% for cat in member_categories %}
+                                <option value="{{ cat }}" {% if cat == 'Solution Engineers' %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Role</label>
+                            <input type="text" name="role" class="form-control" value="Senior Solutions Engineer">
+                        </div>
+                    </div>
                     <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <input type="text" name="role" class="form-control" value="Senior Solutions Engineer">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_in_one_on_ones" value="Y" id="add_show_11" checked>
+                            <label class="form-check-label" for="add_show_11">Show in 1-on-1s Team Member dropdown</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -233,9 +310,25 @@
                             <input type="text" name="aligned_rep_4_location" class="form-control" value="{{ member.aligned_rep_4_location or '' }}" placeholder="City, State...">
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category *</label>
+                            <select name="category" class="form-select" required>
+                                {% for cat in member_categories %}
+                                <option value="{{ cat }}" {% if (member.category or 'Solution Engineers') == cat %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Role</label>
+                            <input type="text" name="role" class="form-control" value="{{ member.role }}">
+                        </div>
+                    </div>
                     <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <input type="text" name="role" class="form-control" value="{{ member.role }}">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_in_one_on_ones" value="Y" id="edit_show_11_{{ member.id }}" {% if member.show_in_one_on_ones != 'N' %}checked{% endif %}>
+                            <label class="form-check-label" for="edit_show_11_{{ member.id }}">Show in 1-on-1s Team Member dropdown</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

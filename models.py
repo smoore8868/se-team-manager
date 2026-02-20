@@ -21,6 +21,8 @@ class TeamMember(db.Model):
     aligned_rep_3_location = db.Column(db.String(100))
     aligned_rep_4_location = db.Column(db.String(100))
     role = db.Column(db.String(50), default='Senior Solutions Engineer')
+    category = db.Column(db.String(50), default='Solution Engineers')
+    show_in_one_on_ones = db.Column(db.String(1), default='Y')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     one_on_ones = db.relationship('OneOnOne', backref='team_member', lazy=True, cascade='all, delete-orphan')
@@ -60,6 +62,8 @@ class Opportunity(db.Model):
     rfp = db.Column(db.String(1))
     demo = db.Column(db.String(1))
     pov_status = db.Column(db.String(20))
+    competitive = db.Column(db.String(1), default='N')
+    competitive_notes = db.Column(db.Text)
     latest_update_date = db.Column(db.Date)
     latest_update_notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

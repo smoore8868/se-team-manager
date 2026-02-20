@@ -6,9 +6,14 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h2><i class="bi bi-graph-up-arrow"></i> Opportunities</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOppModal">
-            <i class="bi bi-plus-lg"></i> Add Opportunity
-        </button>
+        <div>
+            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                <i class="bi bi-upload"></i> Import CSV
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOppModal">
+                <i class="bi bi-plus-lg"></i> Add Opportunity
+            </button>
+        </div>
     </div>
 </div>
 
@@ -63,42 +68,42 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="oppTable">
                 <thead>
                     <tr>
-                        <th>Opportunity</th>
-                        <th>Account</th>
-                        <th>Stage</th>
-                        <th>Conf</th>
-                        <th>Value</th>
-                        <th>Primary SE</th>
-                        <th>Sales Rep</th>
-                        <th>Products</th>
-                        <th>POV</th>
-                        <th>Close Date</th>
+                        <th class="sortable" data-col="0" data-type="string" style="cursor:pointer;">Opportunity <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="1" data-type="string" style="cursor:pointer;">Account <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="2" data-type="number" style="cursor:pointer;">Stage <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="3" data-type="number" style="cursor:pointer;">Conf <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="4" data-type="number" style="cursor:pointer;">Value <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="5" data-type="string" style="cursor:pointer;">Primary SE <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="6" data-type="string" style="cursor:pointer;">Sales Rep <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="7" data-type="string" style="cursor:pointer;">Products <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="8" data-type="string" style="cursor:pointer;">POV <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                        <th class="sortable" data-col="9" data-type="date" style="cursor:pointer;">Close Date <i class="bi bi-arrow-down-up text-muted small"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for opp in opportunities %}
                     <tr>
-                        <td>
+                        <td data-sort-value="{{ opp.name.lower() }}">
                             <strong>
-                                {% if opp.salesforce_link %}<a href="{{ opp.salesforce_link }}" target="_blank">{{ opp.name }}</a>{% else %}{{ opp.name }}{% endif %}
+                                {% if opp.salesforce_link %}<a href="{{ opp.salesforce_link }}" target="_blank" style="color: #00008b;">{{ opp.name }}</a>{% else %}{{ opp.name }}{% endif %}
                             </strong>
-                            {% if opp.updates|length > 1 %}
+                            {% if opp.updates|length > 2 %}
                             <span class="badge bg-info">{{ opp.updates|length - 1 }} updates</span>
                             {% endif %}
                         </td>
-                        <td>{{ opp.account }}</td>
-                        <td><span class="badge bg-{{ 'success' if opp.stage == '6' else 'primary' }}">{{ opp.stage }}</span></td>
-                        <td>{{ opp.confidence or '-' }}</td>
-                        <td>${{ '{:,.0f}'.format(opp.value) }}</td>
-                        <td>{{ opp.team_member.name }}</td>
-                        <td>{{ opp.sales_rep or '-' }}</td>
-                        <td>{{ opp.products or '-' }}</td>
-                        <td><span class="badge bg-{{ 'success' if opp.pov_status == 'Tech Win' else 'primary' if opp.pov_status == 'Active' else 'info' if opp.pov_status == 'Completed' else 'secondary' }}">{{ opp.pov_status or 'None' }}</span></td>
-                        <td>{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</td>
+                        <td data-sort-value="{{ opp.account.lower() }}">{{ opp.account }}</td>
+                        <td data-sort-value="{{ opp.stage }}"><span class="badge bg-{{ 'success' if opp.stage == '6' else 'primary' }}">{{ opp.stage }}</span></td>
+                        <td data-sort-value="{{ opp.confidence or 0 }}">{{ opp.confidence or '-' }}</td>
+                        <td data-sort-value="{{ opp.value }}">${{ '{:,.0f}'.format(opp.value) }}</td>
+                        <td data-sort-value="{{ opp.team_member.name.lower() }}">{{ opp.team_member.name }}</td>
+                        <td data-sort-value="{{ (opp.sales_rep or '').lower() }}">{{ opp.sales_rep or '-' }}</td>
+                        <td data-sort-value="{{ (opp.products or '').lower() }}">{{ opp.products or '-' }}</td>
+                        <td data-sort-value="{{ opp.pov_status or 'None' }}"><span class="badge bg-{{ 'success' if opp.pov_status == 'Tech Win' else 'primary' if opp.pov_status == 'Active' else 'info' if opp.pov_status == 'Completed' else 'secondary' }}">{{ opp.pov_status or 'None' }}</span></td>
+                        <td data-sort-value="{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '9999-12-31' }}">{{ opp.close_date.strftime('%Y-%m-%d') if opp.close_date else '-' }}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewOppModal{{ opp.id }}">
                                 <i class="bi bi-eye"></i>
@@ -176,7 +181,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Opp Value ($)</label>
-                            <input type="number" name="value" class="form-control" step="0.01" value="0">
+                            <input type="text" name="value" class="form-control currency-input" value="$0.00">
                         </div>
                     </div>
                     <h6 class="form-section-title">Pipeline</h6>
@@ -201,25 +206,36 @@
                     </div>
                     <h6 class="form-section-title">Activities</h6>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label class="form-label">RFP</label>
                             <select name="rfp" class="form-select">
                                 <option value="N">No</option>
                                 <option value="Y">Yes</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label class="form-label">Demo</label>
                             <select name="demo" class="form-select">
                                 <option value="N">No</option>
                                 <option value="Y">Yes</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label class="form-label">POV</label>
                             <select name="pov_status" class="form-select">
                                 {% for ps in pov_statuses %}<option value="{{ ps }}">{{ ps }}</option>{% endfor %}
                             </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Competitive</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="competitive" value="Y" id="add_competitive">
+                                <label class="form-check-label" for="add_competitive">Yes</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Competitor</label>
+                            <input type="text" name="competitive_notes" class="form-control" placeholder="Competitor name(s)">
                         </div>
                     </div>
                     <h6 class="form-section-title">Latest Update</h6>
@@ -352,7 +368,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Opp Value ($)</label>
-                            <input type="number" name="value" class="form-control" step="0.01" value="{{ opp.value }}">
+                            <input type="text" name="value" class="form-control currency-input" value="${{ '{:,.2f}'.format(opp.value) }}">
                         </div>
                     </div>
                     <h6 class="form-section-title">Pipeline</h6>
@@ -377,25 +393,36 @@
                     </div>
                     <h6 class="form-section-title">Activities</h6>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label class="form-label">RFP</label>
                             <select name="rfp" class="form-select">
                                 <option value="N" {% if opp.rfp != 'Y' %}selected{% endif %}>No</option>
                                 <option value="Y" {% if opp.rfp == 'Y' %}selected{% endif %}>Yes</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label class="form-label">Demo</label>
                             <select name="demo" class="form-select">
                                 <option value="N" {% if opp.demo != 'Y' %}selected{% endif %}>No</option>
                                 <option value="Y" {% if opp.demo == 'Y' %}selected{% endif %}>Yes</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label class="form-label">POV</label>
                             <select name="pov_status" class="form-select">
                                 {% for ps in pov_statuses %}<option value="{{ ps }}" {% if opp.pov_status == ps %}selected{% endif %}>{{ ps }}</option>{% endfor %}
                             </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Competitive</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="competitive" value="Y" id="edit_competitive_{{ opp.id }}" {% if opp.competitive == 'Y' %}checked{% endif %}>
+                                <label class="form-check-label" for="edit_competitive_{{ opp.id }}">Yes</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Competitor</label>
+                            <input type="text" name="competitive_notes" class="form-control" value="{{ opp.competitive_notes or '' }}" placeholder="Competitor name(s)">
                         </div>
                     </div>
                     <h6 class="form-section-title">Latest Update</h6>
@@ -466,4 +493,72 @@
     </div>
 </div>
 {% endfor %}
+
+<!-- Import CSV Modal -->
+<div class="modal fade" id="importCsvModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('import_opportunities') }}" method="post" enctype="multipart/form-data">
+                <div class="modal-header" style="background-color: #1a2332; border-top: 3px solid #f15822;">
+                    <h5 class="modal-title" style="color: #fff; font-weight: 600;">Import Opportunities from CSV</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Upload a CSV file to bulk import opportunities. Required columns: <strong>name</strong>, <strong>account</strong>, <strong>se_name</strong>.</p>
+                    <p><a href="{{ url_for('import_template') }}"><i class="bi bi-download"></i> Download Template</a> to see the expected format.</p>
+                    <div class="mb-3">
+                        <label class="form-label">CSV File *</label>
+                        <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var table = document.getElementById('oppTable');
+    if (!table) return;
+    var headers = table.querySelectorAll('th.sortable');
+    var currentCol = -1, ascending = true;
+
+    headers.forEach(function(th) {
+        th.addEventListener('click', function() {
+            var col = parseInt(th.dataset.col);
+            var type = th.dataset.type;
+            if (currentCol === col) {
+                ascending = !ascending;
+            } else {
+                currentCol = col;
+                ascending = true;
+            }
+            headers.forEach(function(h) {
+                h.querySelector('i').className = 'bi bi-arrow-down-up text-muted small';
+            });
+            th.querySelector('i').className = ascending ? 'bi bi-arrow-up small' : 'bi bi-arrow-down small';
+
+            var tbody = table.querySelector('tbody');
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort(function(a, b) {
+                var aCell = a.cells[col], bCell = b.cells[col];
+                if (!aCell || !bCell) return 0;
+                var aVal = aCell.dataset.sortValue || '';
+                var bVal = bCell.dataset.sortValue || '';
+                if (type === 'number') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                    return ascending ? aVal - bVal : bVal - aVal;
+                }
+                return ascending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+            rows.forEach(function(row) { tbody.appendChild(row); });
+        });
+    });
+});
+</script>
 {% endblock %}
